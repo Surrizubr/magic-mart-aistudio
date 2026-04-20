@@ -39,7 +39,7 @@ serve(async (req) => {
     console.log("Usuário autenticado com sucesso:", user.email);
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" });
-    const origin = req.headers.get("origin") || "https://magic-mart-br-antigravity.vercel.app";
+    const origin = req.headers.get("origin") || "https://magic-mart-aistudio.vercel.app";
 
     const session = await stripe.checkout.sessions.create({
       customer_email: user.email,

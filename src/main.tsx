@@ -10,11 +10,7 @@ console.log("App startup: Initializing...");
 const container = document.getElementById("root");
 if (container) {
   console.log("App startup: Root container found, rendering React...");
-console.log("--- Supabase Env Verification ---");
-console.log("URL:", import.meta.env.VITE_SUPABASE_URL || "NOT SET");
-console.log("Key Configured:", !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-console.log("---------------------------------");
-const root = createRoot(container);
+  const root = createRoot(container);
   root.render(<App />);
 } else {
   console.error("App startup: Root container NOT found!");

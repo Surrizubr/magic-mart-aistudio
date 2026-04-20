@@ -1,6 +1,6 @@
 {
   "name": "Magic Mart BR",
-  "description": "Stock management application with localized features and Gemini AI integration.",
-  "requestFramePermissions": [],
+  "description": "Aplicativo de gerenciamento de estoque, compras, finanças e gastos com assistente de IA Gemini integrado",
+  "requestFramePermissions": ["geolocation", "camera"],
   "majorCapabilities": []
 }

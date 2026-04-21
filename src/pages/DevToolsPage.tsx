@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Key, Send, Database, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { useSubscription } from '@/hooks/useSubscription';
+import { APP_VERSION, LAST_DEPLOY } from '@/version';
 
 interface DevToolsPageProps {
   onBack: () => void;
@@ -160,7 +161,39 @@ export function DevToolsPage({ onBack }: DevToolsPageProps) {
         )}
 
         <div className="text-center">
-          <p className="text-[10px] text-muted-foreground">O Modo Desenvolvedor permite verificar a integridade da conexão direta com os serviços do Google sem passar pelas Edge Functions intermediárias quando possível.</p>
+          <p className="text-[10px] text-muted-foreground text-center">O Modo Desenvolvedor permite verificar a integridade da conexão direta com os serviços do Google sem passar pelas Edge Functions intermediárias quando possível.</p>
+        </div>
+
+        {/* Versioning Card */}
+        <div className="bg-slate-950 rounded-xl border border-slate-800 p-5 space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Database className="w-5 h-5 text-blue-400" />
+              <h3 className="font-bold text-white">Versionamento</h3>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase">Build Info</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
+              <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Versão Atual</p>
+              <p className="text-lg font-mono font-bold text-white tracking-widest">{APP_VERSION}</p>
+            </div>
+            <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
+              <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Último Deploy</p>
+              <p className="text-[10px] font-mono text-slate-300">
+                {new Date(LAST_DEPLOY).toLocaleDateString('pt-BR')} <br/>
+                {new Date(LAST_DEPLOY).toLocaleTimeString('pt-BR')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-amber-500 bg-amber-500/10 p-3 rounded-lg border border-amber-500/20">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <p className="text-[10px] leading-tight">
+              A versão é incrementada manualmente a cada ciclo de atualização do sistema para rastrear mudanças significativas.
+            </p>
+          </div>
         </div>
       </div>
     </div>

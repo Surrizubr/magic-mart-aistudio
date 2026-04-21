@@ -112,13 +112,26 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
       setProgressPercent(70);
       setProgressMsg('Resposta recebida. Processando itens...');
 
-      // Add IDs to items
-      const items: ReceiptItem[] = (resultData.items || []).map((item: any, i: number) => ({
-        ...item,
-        id: `ai-${i + 1}`,
-        discount_amount: item.discount_amount || 0,
-        discounted_price: item.discounted_price ?? item.total_price,
-      }));
+      // Add IDs to items and normalize fields if necessary
+      const items: ReceiptItem[] = (resultData.items || []).map((item: any, i: number) => {
+        const product_name = item.product_name || item.name || 'Produto sem nome';
+        const quantity = Number(item.quantity) || 1;
+        const unit_price = Number(item.unit_price || item.price || 0);
+        const total_price = Number(item.total_price || (quantity * unit_price) || 0);
+        
+        return {
+          ...item,
+          id: `ai-${i + 1}`,
+          product_name,
+          quantity,
+          unit: item.unit || 'un',
+          unit_price,
+          total_price,
+          discount_amount: Number(item.discount_amount || 0),
+          discounted_price: Number(item.discounted_price ?? total_price),
+          category: item.category || 'Outros',
+        };
+      });
 
       const itemsSum = items.reduce((s: number, i: ReceiptItem) => s + i.total_price, 0);
       const discountedSum = items.reduce((s: number, i: ReceiptItem) => s + i.discounted_price, 0);

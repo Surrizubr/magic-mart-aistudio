@@ -96,18 +96,58 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
     setImages(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const compressImage = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Max size 1200px
+        const max = 1200;
+        if (width > height) {
+          if (width > max) {
+            height *= max / width;
+            width = max;
+          }
+        } else {
+          if (height > max) {
+            width *= max / height;
+            height = max;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        // Compress with reduced quality (0.7)
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = dataUrl;
+    });
+  };
+
   const processImages = async (imgs: string[]) => {
     setStep('processing');
     setProgressPercent(10);
-    setProgressMsg('Enviando imagens para análise...');
+    setProgressMsg('Otimizando imagens...');
     setError(null);
 
     try {
-      setProgressPercent(25);
-      setProgressMsg('Imagens enviadas. Aguardando processamento da IA...');
+      // Compress all images first
+      const compressedImgs = await Promise.all(imgs.map(img => compressImage(img)));
+      
+      setProgressPercent(20);
+      setProgressMsg('Enviando imagens para análise...');
 
       const geminiApiKey = localStorage.getItem('gemini-api-key') || '';
-      const resultData = await analyzeWithGemini(imgs, RECEIPT_PROMPT, geminiApiKey);
+      if (!geminiApiKey) {
+        throw new Error('Chave API não encontrada. Por favor, configure-a no Menu > Configurações.');
+      }
+
+      const resultData = await analyzeWithGemini(compressedImgs, RECEIPT_PROMPT, geminiApiKey);
 
       setProgressPercent(70);
       setProgressMsg('Resposta recebida. Processando itens...');

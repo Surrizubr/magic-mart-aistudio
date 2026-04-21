@@ -3,12 +3,14 @@ import { PageHeader } from '@/components/PageHeader';
 import { toast } from 'sonner';
 import { Key, Send, Database, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface DevToolsPageProps {
   onBack: () => void;
 }
 
 export function DevToolsPage({ onBack }: DevToolsPageProps) {
+  const { info, status: subStatus } = useSubscription();
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini-api-key') || '');
   const [testResult, setTestResult] = useState<{ status: 'idle' | 'loading' | 'success' | 'error', message: string }>({
     status: 'idle',
@@ -56,15 +58,13 @@ export function DevToolsPage({ onBack }: DevToolsPageProps) {
   };
 
   const checkSubscriptionData = () => {
-    const profile = localStorage.getItem('user_profile_personal');
-    if (profile) {
-      const data = JSON.parse(profile);
+    if (info) {
       setTestResult({ 
         status: 'success', 
-        message: `Perfil encontrado: ${data.display_name} (${data.email}). Status: ${data.subscription_status}` 
+        message: `Perfil (Supabase): ${info.display_name} (${info.email}). Status do Contexto: ${subStatus}. Stripe Status: ${info.stripe_status}` 
       });
     } else {
-      setTestResult({ status: 'error', message: 'Perfil de usuário não encontrado no localStorage.' });
+      setTestResult({ status: 'error', message: 'Dados do perfil não carregados no SubscriptionContext. Tente atualizar a página.' });
     }
   };
 

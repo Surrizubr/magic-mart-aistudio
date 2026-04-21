@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Crown, Check, LogOut } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDevMode } from '@/contexts/DevModeContext';
 import { toast } from 'sonner';
@@ -16,6 +16,9 @@ export function PricingPage() {
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {},
+        headers: {
+          'apikey': SUPABASE_PUBLISHABLE_KEY || '',
+        }
       });
       if (error) throw error;
       if (data?.url) {

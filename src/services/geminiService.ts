@@ -1,5 +1,5 @@
 import { supabase, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 export async function analyzeWithGemini(images: string[], prompt: string, providedApiKey?: string) {
   try {
@@ -28,7 +28,7 @@ export async function analyzeWithGemini(images: string[], prompt: string, provid
 
     // For other prompts (like direct product recognition), call Gemini directly from the client
     console.log("Using direct Gemini API for product/general analysis...");
-    const ai = new GoogleGenerativeAI(geminiApiKey);
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
     
     // Prepare image parts
     const imageParts = images.map(img => {
@@ -42,24 +42,24 @@ export async function analyzeWithGemini(images: string[], prompt: string, provid
     });
 
     const isProductPrompt = prompt === PRODUCT_PROMPT;
-    const model = ai.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest",
-      generationConfig: {
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: { parts: [{ text: prompt }, ...imageParts] },
+      config: {
         responseMimeType: "application/json",
         responseSchema: isProductPrompt ? {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            product_name: { type: SchemaType.STRING },
-            category: { type: SchemaType.STRING },
+            product_name: { type: Type.STRING },
+            category: { type: Type.STRING },
           },
           required: ["product_name", "category"]
         } : undefined
       }
     });
 
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const response = await result.response;
-    const text = response.text();
+    const text = response.text;
 
     if (!text) {
       throw new Error("A IA não retornou uma resposta válida.");

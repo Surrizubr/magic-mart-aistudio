@@ -63,10 +63,17 @@ export function PricingPage() {
 
           <button
             onClick={handleCheckout}
-            disabled={loading}
-            className="w-full p-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+            disabled={loading || checkoutLoading}
+            className="w-full p-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? '...' : t('premiumSubscribe')}
+            {(loading || checkoutLoading) ? (
+              <>
+                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                {t('processing') || 'Processando...'}
+              </>
+            ) : (
+              t('premiumSubscribe')
+            )}
           </button>
 
           <button

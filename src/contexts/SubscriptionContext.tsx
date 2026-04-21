@@ -93,6 +93,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const checkSubscription = useCallback(async ({ forceSync = false }: { forceSync?: boolean } = {}) => {
     if (!user) {
       applySubscriptionState(null);
+      localStorage.removeItem(`sub_status_${user?.id}`);
       setLoading(false);
       return;
     }
@@ -103,7 +104,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    setLoading(true);
+    // Fast-path: check cache first to avoid flickering if we already know it's active
+    const cached = localStorage.getItem(`sub_status_${user.id}`);
+    if (cached === 'active' && !loading && !forceSync) {
+        // We already know it's active, we can skip immediate loading if not forced
+    } else {
+        setLoading(true);
+    }
+
     let profile = await fetchProfile();
 
     const shouldSyncWithStripe =
@@ -116,13 +124,25 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     if (shouldSyncWithStripe) {
       const stripeSync = await syncSubscriptionFromStripe();
       if (stripeSync?.subscribed) {
-        profile = (await fetchProfile()) || profile;
+        // Trust the stripe sync result over the database profile if it confirms subscription
+        profile = {
+          stripe_status: 'active',
+          stripe_customer_id: stripeSync.customer_id || profile?.stripe_customer_id || null,
+          subscription_end: stripeSync.subscription_end || profile?.subscription_end || null,
+          display_name: profile?.display_name || null,
+          email: user.email || '',
+        };
+        localStorage.setItem(`sub_status_${user.id}`, 'active');
+      } else {
+        localStorage.removeItem(`sub_status_${user.id}`);
       }
+    } else if (profile?.stripe_status === 'active') {
+      localStorage.setItem(`sub_status_${user.id}`, 'active');
     }
 
     applySubscriptionState(profile);
     setLoading(false);
-  }, [applySubscriptionState, fetchProfile, user, devMode, syncSubscriptionFromStripe]);
+  }, [applySubscriptionState, fetchProfile, user, devMode, syncSubscriptionFromStripe, loading]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

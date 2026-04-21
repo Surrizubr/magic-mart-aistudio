@@ -37,7 +37,7 @@ Analise a imagem e extraia:
 - store_name (nome da loja/mercado)
 - date (ISO string YYYY-MM-DD ou null)
 - items: array de { name: '...', quantity: '...', price: '...', category: '...' }
-- total: o valor total gasto
+- receipt_total: o valor total gasto
 
 Categorias sugeridas: Frutas, Verduras, Carnes, Laticínios, Padaria, Bebidas, Limpeza, Higiene, Grãos, Temperos, Outros.
 Tente identificar itens duplicados entre várias fotos e remova-os.

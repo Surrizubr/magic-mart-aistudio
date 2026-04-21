@@ -127,7 +127,11 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
       const discountMap = new Map<string, { discount_amount: number; discounted_price: number; discount: number }>();
       items.forEach(item => {
         if (item.discount_amount > 0) {
-          discountMap.set(item.id, { discount_amount: item.discount_amount, discounted_price: item.discounted_price, discount: result.discount || 0 });
+          discountMap.set(item.id, { 
+            discount_amount: item.discount_amount, 
+            discounted_price: item.discounted_price, 
+            discount: resultData.discount || 0 
+          });
         }
       });
       setOriginalDiscounts(discountMap);
@@ -135,13 +139,20 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
       setProgressPercent(100);
       setProgressMsg('Concluído!');
 
-      setResult({
-        ...result,
+      const finalResult: AIReceiptResult = {
+        store_name: resultData.store_name || 'Mercado Desconhecido',
+        store_address: resultData.store_address,
+        date: resultData.date || new Date().toISOString().slice(0, 10),
         items,
+        receipt_total: resultData.receipt_total || 0,
         items_sum: itemsSum,
         discounted_sum: discountedSum,
-        difference: Math.abs((result.receipt_total || 0) - discountedSum),
-      });
+        discount: resultData.discount,
+        difference: Math.abs((resultData.receipt_total || 0) - discountedSum),
+        notes: resultData.notes
+      };
+
+      setResult(finalResult);
       setStep('results');
     } catch (err: any) {
       console.error('AI analysis error:', err);

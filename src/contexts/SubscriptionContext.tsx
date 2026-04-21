@@ -59,13 +59,39 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const fetchProfile = useCallback(async (): Promise<SubscriptionInfo | null> => {
     if (!user) return null;
 
-    const { data, error } = await supabase
+    const { data, error, status, statusText } = await supabase
       .from('profiles')
       .select('stripe_status, stripe_customer_id, subscription_end, display_name, user_id')
       .eq('user_id', user.id)
       .single();
 
-    if (error || !data) return null;
+    if (error) {
+      // 406 usually means .single() found no rows. Let's try to create the profile.
+      if (status === 406 || error.code === 'PGRST116') {
+        console.warn('Profile not found, attempting to create one...');
+        const { data: newData, error: insertError } = await supabase
+          .from('profiles')
+          .insert({ user_id: user.id, display_name: split_part(user.email || '', '@', 1) })
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('Failed to auto-create profile:', insertError);
+          return null;
+        }
+        return {
+          stripe_status: (newData as any).stripe_status || 'inactive',
+          stripe_customer_id: (newData as any).stripe_customer_id,
+          subscription_end: (newData as any).subscription_end,
+          display_name: newData.display_name,
+          email: user.email || '',
+        };
+      }
+      console.error('Fetch profile failed with status:', status, statusText, error);
+      return null;
+    }
+    
+    if (!data) return null;
 
     return {
       stripe_status: (data as any).stripe_status || 'inactive',
@@ -75,6 +101,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       email: user.email || '',
     };
   }, [user]);
+
+  // Helper for split_part equivalent in JS
+  function split_part(str: string, sep: string, part: number) {
+    return str.split(sep)[part - 1] || str;
+  }
 
   const syncSubscriptionFromStripe = useCallback(async (): Promise<any | null> => {
     try {

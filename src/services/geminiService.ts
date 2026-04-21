@@ -1,7 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export async function analyzeWithGemini(images: string[], prompt: string, apiKey: string) {
-  if (!apiKey) throw new Error("Gemini API Key missing");
+export async function analyzeWithGemini(images: string[], prompt: string, providedApiKey?: string) {
+  // Use provided key or fallback to environment variable
+  const apiKey = providedApiKey || import.meta.env.VITE_GEMINI_API_KEY;
+  
+  if (!apiKey || apiKey === 'undefined') {
+    throw new Error("Chave API do Gemini não configurada. Por favor, configure nas definições.");
+  }
 
   const genAI = new GoogleGenerativeAI(apiKey);
   // Reverting to the most standard model name. If this fails, the error will be caught.

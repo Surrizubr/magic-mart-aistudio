@@ -4,7 +4,8 @@ export async function analyzeWithGemini(images: string[], prompt: string, apiKey
   if (!apiKey) throw new Error("Gemini API Key missing");
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+  // Reverting to the most standard model name. If this fails, the error will be caught.
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const imageParts = images.map(img => {
     const [header, data] = img.split(',');
@@ -17,13 +18,23 @@ export async function analyzeWithGemini(images: string[], prompt: string, apiKey
     };
   });
 
-  const result = await model.generateContent([prompt, ...imageParts]);
-  const response = await result.response;
-  const text = response.text();
-  
-  // Clean potentially malformed JSON (remove markdown blocks if present)
-  const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-  return JSON.parse(cleanJson);
+  try {
+    const result = await model.generateContent([prompt, ...imageParts]);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Clean potentially malformed JSON (remove markdown blocks if present)
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJson);
+  } catch (error: any) {
+    console.error("Original Gemini Error Details:", {
+      message: error?.message,
+      status: error?.status,
+      stack: error?.stack,
+      model: "gemini-1.5-flash"
+    });
+    throw error;
+  }
 }
 
 export const RECEIPT_PROMPT = `Você é um scanner de cupons fiscais brasileiros.

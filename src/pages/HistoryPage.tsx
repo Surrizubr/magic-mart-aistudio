@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
-import { getHistory, saveHistory } from '@/data/mockData';
-import { MapPin, ScanLine, Clock, Pencil, LocateFixed, AlertTriangle, Trash2 } from 'lucide-react';
+import { getHistory, saveHistory, getLists, saveLists } from '@/data/mockData';
+import { MapPin, ScanLine, Clock, Pencil, LocateFixed, AlertTriangle, Trash2, ListPlus } from 'lucide-react';
 import { SwipeableRow } from '@/components/SwipeableRow';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -59,7 +60,8 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
   };
 
   const grouped = historyData.reduce<Record<string, typeof historyData>>((acc, h) => {
-    (acc[h.purchase_date] ||= []).push(h);
+    const key = `${h.purchase_date}_${h.store_name}`;
+    (acc[key] ||= []).push(h);
     return acc;
   }, {});
 
@@ -108,6 +110,48 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     window.location.reload();
   };
 
+  const handleAddToList = (item: any) => {
+    const lists = getLists();
+    let reminderList = lists.find(l => l.name === 'Lembrete de Compras');
+
+    const newItem = {
+      id: crypto.randomUUID(),
+      list_id: '',
+      product_name: item.product_name,
+      category: item.category,
+      quantity: 1,
+      unit: 'un',
+      estimated_price: item.price,
+      actual_price: 0,
+      is_checked: false
+    };
+
+    if (reminderList) {
+      newItem.list_id = reminderList.id;
+      reminderList.items.push(newItem);
+      reminderList.total_items = reminderList.items.length;
+      reminderList.estimated_total = reminderList.items.reduce((sum, i) => sum + (i.estimated_price * i.quantity), 0);
+    } else {
+      const newListId = crypto.randomUUID();
+      newItem.list_id = newListId;
+      reminderList = {
+        id: newListId,
+        name: 'Lembrete de Compras',
+        status: 'active',
+        total_items: 1,
+        checked_items: 0,
+        estimated_total: item.price,
+        actual_total: 0,
+        created_at: new Date().toISOString().slice(0, 10),
+        items: [newItem]
+      };
+      lists.push(reminderList);
+    }
+
+    saveLists([...lists]);
+    toast.success(`"${item.product_name}" adicionado à lista Lembrete de Compras`);
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       // If it's already YYYY-MM-DD, append T12:00 for local time stability
@@ -153,90 +197,89 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
           <p className="text-2xl font-bold text-primary">{fc(totalMonth)}</p>
         </div>
 
-        {/* Grouped by date */}
-        {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([date, items]) => {
-          const dayTotal = items.reduce((s, i) => s + i.total_price, 0);
-          const byStore = items.reduce<Record<string, typeof items>>((acc, i) => {
-            (acc[i.store_name] ||= []).push(i);
-            return acc;
-          }, {});
+        {/* Grouped by date + store */}
+        {Object.entries(grouped)
+          .sort(([keyA], [keyB]) => {
+            const [dateA] = keyA.split('_');
+            const [dateB] = keyB.split('_');
+            return dateB.localeCompare(dateA);
+          })
+          .map(([key, storeItems]) => {
+            const [date, store] = key.split('_');
+            const storeTotal = storeItems.reduce((s, i) => s + i.total_price, 0);
 
-          return (
-            <div key={date}>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-foreground">
-                  {formatDate(date)}
-                </p>
-                <p className="text-sm text-muted-foreground">{fc(dayTotal)}</p>
-              </div>
-
-              {Object.entries(byStore).map(([store, storeItems]) => {
-                const storeTotal = storeItems.reduce((s, i) => s + i.total_price, 0);
-                return (
-                  <div key={store} className="mb-3">
-                    {/* Store header */}
-                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-border">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-bold text-foreground uppercase">{store}</span>
-                        <button
-                          onClick={() => handleEditAddress(store, date)}
-                          className="text-[10px] text-muted-foreground flex items-center gap-0.5 ml-2 hover:text-primary transition-colors"
-                        >
-                          Editar <Pencil className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground">{fc(storeTotal)}</span>
-                    </div>
-
-                    {/* Scan banner - only show if none of the items in this store group were scanned */}
-                    {onNavigateToScanner && !storeItems.some(i => i.scanned) && (
+            return (
+              <div key={key} className="mb-6">
+                {/* Header for Date and Store */}
+                <div className="flex flex-col mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-bold text-foreground">
+                      {formatDate(date)}
+                    </p>
+                    <p className="text-xs font-medium text-muted-foreground">{fc(storeTotal)}</p>
+                  </div>
+                  <div className="flex items-center justify-between pb-2 border-b border-border">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs font-bold text-foreground uppercase">{store}</span>
                       <button
-                        onClick={onNavigateToScanner}
-                        className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2 text-left"
+                        onClick={() => handleEditAddress(store, date)}
+                        className="text-[10px] text-muted-foreground flex items-center gap-0.5 ml-2 hover:text-primary transition-colors"
                       >
-                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span className="text-[11px] text-amber-800">
-                          Escaneie o cupom fiscal desta compra para completar informações faltantes
-                        </span>
-                        <ScanLine className="w-4 h-4 text-amber-600 shrink-0 ml-auto" />
+                        Editar <Pencil className="w-2.5 h-2.5" />
                       </button>
-                    )}
-
-                    {/* Items */}
-                    <div className="space-y-2">
-                      {storeItems.map(item => {
-                        const catColor = categoryColors[item.category] || 'bg-accent text-accent-foreground';
-                        const catIcon = categoryIcons[item.category] || '🛒';
-                        return (
-                          <SwipeableRow
-                            key={item.id}
-                            onSwipeLeft={() => handleDeleteItem(item.id)}
-                            leftIcon={<Trash2 className="w-5 h-5 text-destructive-foreground" />}
-                            leftBg="bg-destructive"
-                          >
-                            <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 bg-background">
-                              <div>
-                                <p className="text-sm font-medium text-foreground">{item.product_name}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${catColor} flex items-center gap-1`}>
-                                    {catIcon} {item.category}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">{item.quantity} un</span>
-                                </div>
-                              </div>
-                              <p className="text-sm font-bold text-foreground">{fc(item.total_price)}</p>
-                            </div>
-                          </SwipeableRow>
-                        );
-                      })}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          );
-        })}
+                </div>
+
+                {/* Scan banner - only show if none of the items in this store group were scanned */}
+                {onNavigateToScanner && !storeItems.some(i => i.scanned) && (
+                  <button
+                    onClick={onNavigateToScanner}
+                    className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2 text-left"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span className="text-[11px] text-amber-800">
+                      Escaneie o cupom fiscal desta compra para completar informações faltantes
+                    </span>
+                    <ScanLine className="w-4 h-4 text-amber-600 shrink-0 ml-auto" />
+                  </button>
+                )}
+
+                {/* Items */}
+                <div className="space-y-2">
+                  {storeItems.map(item => {
+                    const catColor = categoryColors[item.category] || 'bg-accent text-accent-foreground';
+                    const catIcon = categoryIcons[item.category] || '🛒';
+                    return (
+                      <SwipeableRow
+                        key={item.id}
+                        onSwipeLeft={() => handleDeleteItem(item.id)}
+                        leftIcon={<Trash2 className="w-5 h-5 text-destructive-foreground" />}
+                        leftBg="bg-destructive"
+                        onSwipeRight={() => handleAddToList(item)}
+                        rightIcon={<ListPlus className="w-5 h-5 text-primary-foreground" />}
+                        rightBg="bg-primary"
+                      >
+                        <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 bg-background">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{item.product_name}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${catColor} flex items-center gap-1`}>
+                                {catIcon} {item.category}
+                              </span>
+                              <span className="text-xs text-muted-foreground">{item.quantity} un</span>
+                            </div>
+                          </div>
+                          <p className="text-sm font-bold text-foreground">{fc(item.total_price)}</p>
+                        </div>
+                      </SwipeableRow>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
       </motion.div>
 
       {/* Edit Address Dialog */}

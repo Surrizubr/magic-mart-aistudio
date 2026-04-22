@@ -21,7 +21,17 @@ export function ListsPage({ onBack }: ListsPageProps) {
   const [showNewList, setShowNewList] = useState(false);
   const [newName, setNewName] = useState('');
   const [lists, setLists] = useState<ShoppingList[]>(() => getLists());
-  const [selectedList, setSelectedList] = useState<ShoppingList | null>(null);
+  const [selectedListId, setSelectedListId] = useState<string | null>(() => localStorage.getItem('selected_list_id'));
+
+  const selectedList = lists.find(l => l.id === selectedListId) || null;
+
+  useEffect(() => {
+    if (selectedListId) {
+      localStorage.setItem('selected_list_id', selectedListId);
+    } else {
+      localStorage.removeItem('selected_list_id');
+    }
+  }, [selectedListId]);
 
   const filtered = lists.filter(l => {
     if (filter === 'active') return l.status === 'active' || l.status === 'shopping';
@@ -79,7 +89,7 @@ export function ListsPage({ onBack }: ListsPageProps) {
     const updatedStockWithRates = recalculateStockRates(existingStock, history);
     await saveStock(updatedStockWithRates);
     await saveHistory(history);
-    setSelectedList(null);
+    setSelectedListId(null);
   };
 
   useEffect(() => {
@@ -111,11 +121,10 @@ export function ListsPage({ onBack }: ListsPageProps) {
   };
 
   if (selectedList) {
-    const current = lists.find(l => l.id === selectedList.id) || selectedList;
     return (
       <ListDetailPage
-        list={current}
-        onBack={() => setSelectedList(null)}
+        list={selectedList}
+        onBack={() => setSelectedListId(null)}
         onUpdateList={handleUpdateList}
         onFinishShopping={handleFinishShopping}
       />
@@ -206,7 +215,7 @@ export function ListsPage({ onBack }: ListsPageProps) {
               key={l.id}
               list={l}
               index={i}
-              onSelect={() => setSelectedList(l)}
+              onSelect={() => setSelectedListId(l.id)}
               onSwipe={(dir) => handleSwipe(l.id, dir)}
             />
           ))}

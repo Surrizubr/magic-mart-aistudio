@@ -19,17 +19,24 @@ import { TabId } from '@/types';
 const Index = () => {
   const { info } = useSubscription();
   const [activeTab, setActiveTab] = useState<TabId>(() => {
-    const savedTab = sessionStorage.getItem('active_tab');
-    const validTabs: TabId[] = ['home', 'lists', 'stock', 'savings', 'history', 'reports', 'scanner', 'shopping', 'share'];
+    const savedTab = localStorage.getItem('active_tab');
+    const validTabs: TabId[] = ['home', 'lists', 'stock', 'savings', 'history', 'reports', 'scanner', 'shopping', 'share', 'devtools'];
     return validTabs.includes(savedTab as TabId) ? (savedTab as TabId) : 'home';
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuInitialSubMenu, setMenuInitialSubMenu] = useState<any>(null);
-  const [historyFilter, setHistoryFilter] = useState<{ date?: string; store?: string }>({});
+  const [historyFilter, setHistoryFilter] = useState<{ date?: string; store?: string }>(() => {
+    const saved = localStorage.getItem('history_filter');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   useEffect(() => {
-    sessionStorage.setItem('active_tab', activeTab);
+    localStorage.setItem('active_tab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('history_filter', JSON.stringify(historyFilter));
+  }, [historyFilter]);
 
   const goHome = () => setActiveTab('home');
 

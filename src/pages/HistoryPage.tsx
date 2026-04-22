@@ -108,12 +108,24 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     window.location.reload();
   };
 
+  const formatDate = (dateStr: string) => {
+    try {
+      // If it's already YYYY-MM-DD, append T12:00 for local time stability
+      const baseDate = dateStr.includes('T') ? dateStr : `${dateStr}T12:00`;
+      const date = new Date(baseDate);
+      if (isNaN(date.getTime())) return 'Data Inválida';
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
+    } catch {
+      return 'Data Inválida';
+    }
+  };
+
   return (
     <div className="pb-20">
       <PageHeader
         title="Histórico"
         subtitle={filterDate
-          ? `${filterStore || ''} — ${new Date(filterDate + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}`
+          ? `${filterStore || ''} — ${formatDate(filterDate)}`
           : "Suas compras anteriores"
         }
         onBack={onBack}
@@ -153,7 +165,7 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
             <div key={date}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-bold text-foreground">
-                  {new Date(date + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                  {formatDate(date)}
                 </p>
                 <p className="text-sm text-muted-foreground">{fc(dayTotal)}</p>
               </div>

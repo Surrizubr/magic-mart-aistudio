@@ -181,7 +181,7 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
         price: item.price,
         total_price: item.price * item.quantity,
         store_name: storeName,
-        purchase_date: new Date().toISOString(),
+        purchase_date: new Date().toISOString().slice(0, 10),
       });
     });
     
@@ -469,16 +469,7 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
               {cameraStep === 'captured' && capturedImage && (
                 <>
                   <img src={capturedImage} className="w-full h-full object-cover" alt="Captured" />
-                  <div className="absolute inset-0 bg-black/20" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="bg-black/60 backdrop-blur-lg p-6 rounded-2xl border border-white/20 text-center space-y-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-                        <CheckCircle className="w-6 h-6 text-primary" />
-                      </div>
-                      <p className="text-white font-bold">Imagem capturada!</p>
-                      <p className="text-white/70 text-xs">Deseja usar esta foto para identificação?</p>
-                    </div>
-                  </div>
+                  <div className="absolute inset-0 bg-black/10" />
                 </>
               )}
 

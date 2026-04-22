@@ -8,7 +8,7 @@ export async function analyzeWithGemini(images: string[], prompt: string, provid
       throw new Error('Chave API não encontrada. Por favor, configure-a no Menu > Configurações.');
     }
 
-    // Send directly to Gemini API for both Product and Receipt
+    // For both receipts and product recognition, call Gemini directly from the client
     console.log("Using direct Gemini API for analysis...");
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
     
@@ -26,45 +26,45 @@ export async function analyzeWithGemini(images: string[], prompt: string, provid
     const isProductPrompt = prompt === PRODUCT_PROMPT;
     const isReceiptPrompt = prompt === RECEIPT_PROMPT;
     
+    const responseSchema = isReceiptPrompt ? {
+      type: Type.OBJECT,
+      properties: {
+        store_name: { type: Type.STRING },
+        store_address: { type: Type.STRING },
+        date: { type: Type.STRING },
+        receipt_total: { type: Type.NUMBER },
+        items: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              product_name: { type: Type.STRING },
+              quantity: { type: Type.NUMBER },
+              unit: { type: Type.STRING },
+              unit_price: { type: Type.NUMBER },
+              total_price: { type: Type.NUMBER },
+              category: { type: Type.STRING },
+            },
+            required: ["product_name", "quantity", "unit", "unit_price", "total_price", "category"]
+          }
+        }
+      },
+      required: ["store_name", "date", "receipt_total", "items"]
+    } : isProductPrompt ? {
+      type: Type.OBJECT,
+      properties: {
+        product_name: { type: Type.STRING },
+        category: { type: Type.STRING },
+      },
+      required: ["product_name", "category"]
+    } : undefined;
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: { parts: [{ text: prompt }, ...imageParts] },
       config: {
         responseMimeType: "application/json",
-        responseSchema: isProductPrompt ? {
-          type: Type.OBJECT,
-          properties: {
-            product_name: { type: Type.STRING },
-            category: { type: Type.STRING },
-          },
-          required: ["product_name", "category"]
-        } : isReceiptPrompt ? {
-          type: Type.OBJECT,
-          properties: {
-            store_name: { type: Type.STRING },
-            store_address: { type: Type.STRING },
-            date: { type: Type.STRING },
-            receipt_total: { type: Type.NUMBER },
-            items: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  product_name: { type: Type.STRING },
-                  quantity: { type: Type.NUMBER },
-                  unit: { type: Type.STRING },
-                  unit_price: { type: Type.NUMBER },
-                  total_price: { type: Type.NUMBER },
-                  discount_amount: { type: Type.NUMBER },
-                  discounted_price: { type: Type.NUMBER },
-                  category: { type: Type.STRING },
-                },
-                required: ["product_name", "quantity", "unit", "unit_price", "total_price", "discount_amount", "discounted_price", "category"]
-              }
-            }
-          },
-          required: ["store_name", "date", "receipt_total", "items"]
-        } : undefined
+        responseSchema
       }
     });
 

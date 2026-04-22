@@ -1,111 +1,101 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { PageHeader } from '@/components/PageHeader';
-import { getLists } from '@/data/mockData';
-import { Share2, Check, MessageCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 import { ShoppingList } from '@/types';
-import { toast } from 'sonner';
+import { getLists } from '@/data/mockData';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Share2, Users, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { motion } from 'framer-motion';
 
-interface SharePageProps {
-  onBack?: () => void;
-}
+export function SharePage({ onBack }: { onBack: () => void }) {
+  const [lists, setLists] = useState<ShoppingList[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const { fc } = useLanguage();
 
-function formatListForWhatsApp(list: ShoppingList, currency: string, fc: (v: number) => string): string {
-  let text = `🛒 *${list.name}*\n\n`;
-  if (list.items.length === 0) {
-    text += '(lista vazia)\n';
-  } else {
-    list.items.forEach((item, i) => {
-      const checked = item.is_checked ? '✅' : '⬜';
-      const price = item.estimated_price > 0 ? ` - ${fc(item.estimated_price)}` : '';
-      text += `${checked} ${item.quantity} ${item.unit} ${item.product_name}${price}\n`;
-    });
-  }
-  const total = list.items.reduce((s, it) => s + it.estimated_price * it.quantity, 0);
-  if (total > 0) {
-    text += `\n💰 *Total estimado: ${fc(total)}*`;
-  }
-  text += '\n\n_Enviado via Magicmart AI 🌿_';
-  return text;
-}
-
-export function SharePage({ onBack }: SharePageProps) {
-  const { currency, formatCurrency: fc } = useLanguage();
-  const lists = getLists().filter(l => l.status === 'active' || l.status === 'shopping');
-  const [selected, setSelected] = useState<string[]>([]);
+  useEffect(() => {
+    setLists(getLists().filter(l => l.status !== 'archived'));
+  }, []);
 
   const toggleSelect = (id: string) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
-  const shareViaWhatsApp = () => {
-    const listsToShare = lists.filter(l => selected.includes(l.id));
-    if (listsToShare.length === 0) {
-      toast.error('Selecione pelo menos uma lista');
-      return;
-    }
-    const text = listsToShare.map(l => formatListForWhatsApp(l, currency, fc)).join('\n\n---\n\n');
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+  const handleShare = () => {
+    // Sharing logic Placeholder
   };
 
   return (
-    <div className="pb-20">
-      <PageHeader
-        title="Compartilhar"
-        subtitle="Envie listas via WhatsApp"
-        onBack={onBack}
-      />
+    <div className="flex flex-col min-h-screen bg-background">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-4 py-4 flex items-center gap-3">
+        <button onClick={onBack} className="p-2">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-xl font-bold">Compartilhar Listas</h1>
+      </header>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-4 space-y-4">
-        {lists.length === 0 ? (
-          <div className="bg-card rounded-xl border border-border p-8 text-center space-y-3">
-            <Share2 className="w-10 h-10 text-muted-foreground mx-auto" />
-            <p className="text-sm text-muted-foreground">Nenhuma lista ativa para compartilhar.</p>
+      <main className="flex-1 p-6 space-y-8">
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 text-center space-y-4">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+            <Users className="w-8 h-8 text-primary" />
           </div>
-        ) : (
-          <>
-            <p className="text-sm text-muted-foreground">Selecione as listas que deseja compartilhar:</p>
-            <div className="space-y-2">
-              {lists.map(l => {
-                const isSelected = selected.includes(l.id);
-                return (
-                  <button
-                    key={l.id}
-                    onClick={() => toggleSelect(l.id)}
-                    className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-colors text-left ${
-                      isSelected
-                        ? 'bg-primary/10 border-primary/30'
-                        : 'bg-card border-border'
-                    }`}
-                  >
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      isSelected ? 'border-primary bg-primary' : 'border-muted-foreground'
-                    }`}>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-foreground">{l.name}</p>
-                      <p className="text-xs text-muted-foreground">{l.items.length} itens · {fc(l.estimated_total)}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="space-y-1">
+            <h2 className="text-lg font-black text-foreground">Ajuda em Família</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Compartilhe suas listas para que outras pessoas visualizem ou ajudem você a marcar os itens durante as compras.
+            </p>
+          </div>
+        </div>
 
-            <Button
-              onClick={shareViaWhatsApp}
-              disabled={selected.length === 0}
-              className="w-full gradient-primary text-primary-foreground border-0 h-12 text-sm font-bold gap-2"
-            >
-              <MessageCircle className="w-5 h-5" />
-              Enviar via WhatsApp ({selected.length})
-            </Button>
-          </>
-        )}
-      </motion.div>
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">
+            Selecione as listas que deseja compartilhar:
+          </label>
+          
+          <div className="grid gap-3">
+            {lists.map(l => (
+              <motion.button
+                key={l.id}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => toggleSelect(l.id)}
+                className={`p-4 rounded-xl border flex items-center gap-4 transition-all text-left ${
+                  selectedIds.includes(l.id) 
+                    ? 'bg-primary/5 border-primary shadow-sm' 
+                    : 'bg-card border-border hover:border-muted-foreground/30'
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                  selectedIds.includes(l.id) ? 'bg-primary border-primary' : 'border-muted-foreground/20'
+                }`}>
+                  {selectedIds.includes(l.id) && <Check className="w-4 h-4 text-white" />}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold truncate text-foreground">{l.name}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                    {l.items.length} itens · {fc(l.estimated_total)}
+                  </p>
+                </div>
+              </motion.button>
+            ))}
+
+            {lists.length === 0 && (
+              <div className="text-center py-12 border-2 border-dashed border-muted-foreground/10 rounded-3xl">
+                <p className="text-sm text-muted-foreground font-medium italic">Nenhuma lista ativa para compartilhar.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-40">
+          <Button onClick={handleShare} className="w-full gradient-primary text-white font-bold h-14 rounded-2xl shadow-xl flex items-center justify-center gap-2 max-w-lg mx-auto">
+            <Share2 className="w-5 h-5" />
+            Compartilhar {selectedIds.length} {selectedIds.length === 1 ? 'lista' : 'listas'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

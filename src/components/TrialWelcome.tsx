@@ -1,97 +1,94 @@
-import { motion } from 'framer-motion';
-import { Leaf, ShoppingCart, BarChart3, Camera, Users, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Check, Sparkles, ShoppingCart, Database, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-interface TrialWelcomeProps {
-  onStartTrial: () => void;
-}
-
-const features = [
-  { icon: ShoppingCart, text: 'Listas de compras inteligentes' },
-  { icon: Camera, text: 'Scanner de cupom fiscal com IA' },
-  { icon: BarChart3, text: 'Relatórios e economia mensal' },
-  { icon: Users, text: 'Compartilhamento em família' },
-  { icon: Bell, text: 'Alertas de reposição automáticos' },
-];
-
-export function TrialWelcome({ onStartTrial }: TrialWelcomeProps) {
+export function TrialWelcome() {
+  const [open, setOpen] = useState(false);
   const { currency } = useLanguage();
+
+  useEffect(() => {
+    const hasSeen = localStorage.getItem('has_seen_welcome');
+    if (!hasSeen) {
+      const timer = setTimeout(() => setOpen(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const close = () => {
+    localStorage.setItem('has_seen_welcome', '1');
+    setOpen(false);
+  };
+
+  const features = [
+    { icon: ShoppingCart, title: 'Listas Inteligentes', desc: 'Sincronização em tempo real' },
+    { icon: Database, title: 'Controle de Estoque', desc: 'Previsão de consumo' },
+    { icon: PieChart, title: 'Relatórios Mensais', desc: 'Veja onde economizar' },
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-sm space-y-5"
-      >
-        <div className="text-center space-y-2">
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-            className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={close}
+            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative w-full max-w-sm bg-background border border-border rounded-[32px] overflow-hidden shadow-2xl"
           >
-            <Leaf className="w-8 h-8 text-primary-foreground" />
+            <div className="p-8 space-y-8">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 rounded-3xl gradient-primary flex items-center justify-center mx-auto shadow-xl shadow-primary/20">
+                  <span className="text-4xl text-white">🌿</span>
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black text-foreground">Magicmart AI</h2>
+                  <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                    Seu assistente inteligente de compras e controle de estoque doméstico
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {features.map((f, i) => (
+                  <div key={i} className="flex items-center gap-4 p-3 rounded-2xl bg-secondary/50">
+                    <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center text-primary shrink-0 shadow-sm">
+                      <f.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground leading-none mb-1">{f.title}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 text-center">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">Oferta de Lançamento</p>
+                  <p className="text-2xl font-black text-foreground">{currency} 49,90/ano</p>
+                  <p className="text-[11px] font-bold text-muted-foreground">Menos de {currency} 4,16 por mês</p>
+                </div>
+                <Button onClick={close} className="w-full gradient-primary text-white font-bold h-14 rounded-2xl shadow-xl">
+                  Começar a Usar
+                </Button>
+              </div>
+            </div>
+            
+            <button onClick={close} className="absolute top-4 right-4 p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
           </motion.div>
-          <h1 className="text-2xl font-bold text-foreground">Magicmart AI</h1>
-          <p className="text-sm text-muted-foreground">
-            Seu assistente inteligente de compras e controle de estoque doméstico
-          </p>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-card rounded-lg shadow-card p-4 space-y-3"
-        >
-          {features.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + i * 0.08 }}
-              className="flex items-center gap-3"
-            >
-              <f.icon className="w-5 h-5 text-primary shrink-0" />
-              <span className="text-sm text-card-foreground">{f.text}</span>
-              <span className="ml-auto text-primary text-sm">✓</span>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="gradient-primary rounded-lg p-4 text-center text-primary-foreground"
-        >
-          <p className="text-2xl font-bold">{currency} 49,90<span className="text-sm font-normal">/ano</span></p>
-          <p className="text-xs opacity-90">Menos de {currency} 4,16 por mês</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9 }}
-          className="space-y-3"
-        >
-          <Button className="w-full h-12 text-base font-semibold gradient-primary text-primary-foreground border-0">
-            Assinar Agora
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onStartTrial}
-            className="w-full h-12 text-base font-semibold border-warning text-warning hover:bg-warning-bg"
-          >
-            Experimentar 7 dias grátis
-          </Button>
-          <button className="w-full text-xs text-muted-foreground underline">
-            Restaurar compra
-          </button>
-        </motion.div>
-      </motion.div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }

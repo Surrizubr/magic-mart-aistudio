@@ -1,5 +1,5 @@
 {
-  "name": "Magic Mart BR",
+  "name": "Magicmart AI",
   "description": "Aplicativo de gerenciamento de estoque, compras, finanças e gastos com assistente de IA Gemini integrado",
   "requestFramePermissions": ["geolocation", "camera"],
   "majorCapabilities": []

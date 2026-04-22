@@ -1,500 +1,303 @@
 import { useState, useEffect } from 'react';
+import { 
+  X, ChevronRight, Settings, CreditCard, 
+  Globe, Sun, Moon, Info, LogOut, 
+  Database, ShieldCheck, HelpCircle, Terminal,
+  Trash2, AlertTriangle, Key
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Palette, Globe, Settings, Info, RotateCcw, Sun, Moon, Type, ChevronRight, ArrowLeft, Check, Key, ClipboardPaste, Save, HelpCircle, CreditCard, RefreshCw, Undo2, LogOut, Send, Database, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import { useLanguage, Lang } from '@/contexts/LanguageContext';
-import { usePreferences } from '@/contexts/PreferencesContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useDevMode } from '@/contexts/DevModeContext';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { resetAllData } from '@/data/mockData';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-
-type SubMenu = null | 'themes' | 'languages' | 'preferences' | 'about' | 'gemini' | 'payment';
 
 interface AppMenuProps {
   open: boolean;
   onClose: () => void;
-  initialSubMenu?: SubMenu;
+  initialSubMenu?: string | null;
 }
 
 export function AppMenu({ open, onClose, initialSubMenu }: AppMenuProps) {
-  const { theme, setTheme, largeText, setLargeText } = useTheme();
-  const { lang, setLang, t } = useLanguage();
-  const { stockExpiryDays, setStockExpiryDays } = usePreferences();
-  const { info, openCheckout, openPortal } = useSubscription();
+  const { t, lang, setLang } = useLanguage();
+  const { info, openPortal, openCheckout } = useSubscription();
   const { devMode, setDevMode } = useDevMode();
-  const [subMenu, setSubMenu] = useState<SubMenu>(null);
+  const [subMenu, setSubMenu] = useState<string | null>(null);
+  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+  const [stockExpiryDays, setStockExpiryDays] = useState(() => parseInt(localStorage.getItem('stock_expiry_days') || '30'));
+  const [testResult, setTestResult] = useState<{ status: 'idle' | 'running' | 'success' | 'error', message?: string }>({ status: 'idle' });
 
-  // Sincronizar subMenu inicial quando o menu abrir
   useEffect(() => {
-    if (open && initialSubMenu) {
-      if (initialSubMenu === 'gemini') {
-        const saved = localStorage.getItem('gemini-api-key');
-        setGeminiKey(saved || '');
-      }
-      setSubMenu(initialSubMenu);
-    }
-    
-    if (!open) {
-      setSubMenu(null);
-      setTestResult({ status: 'idle', message: '' });
-    }
-  }, [open, initialSubMenu]);
+    if (initialSubMenu) setSubMenu(initialSubMenu);
+    else setSubMenu(null);
+  }, [initialSubMenu, open]);
 
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [geminiKey, setGeminiKey] = useState('');
-  const [geminiHasKey, setGeminiHasKey] = useState(() => !!localStorage.getItem('gemini-api-key'));
-
-    const [testResult, setTestResult] = useState<{ status: 'idle' | 'loading' | 'success' | 'error', message: string }>({
-    status: 'idle',
-    message: ''
-  });
-
-  const testConnectivity = async () => {
-    const keyToTest = geminiKey.trim() || localStorage.getItem('gemini-api-key') || '';
-    if (!keyToTest) {
-      toast.error('Informe a chave API antes de testar.');
-      return;
-    }
-
-    setTestResult({ status: 'loading', message: 'Testando conexão com Gemini...' });
-
-    try {
-      const { GoogleGenAI } = await import("@google/genai");
-      const ai = new GoogleGenAI({ apiKey: keyToTest });
-      
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: "Responda apenas com a palavra 'OK' se você estiver recebendo esta mensagem."
-      });
-      const text = response.text || '';
-
-      if (text.includes('OK')) {
-        setTestResult({ status: 'success', message: 'Conexão estabelecida com sucesso! A IA respondeu: ' + text });
-      } else {
-        setTestResult({ status: 'error', message: 'A IA respondeu, mas o conteúdo foi inesperado: ' + text });
-      }
-    } catch (error: any) {
-      console.error('Gemini Test Error:', error);
-      setTestResult({ status: 'error', message: 'Erro na conexão: ' + (error.message || 'Erro desconhecido') });
-    }
-  };
-
-  const checkSubscriptionData = () => {
-    if (info) {
-      setTestResult({ 
-        status: 'success', 
-        message: `Perfil (Supabase): ${info.display_name} (${info.email}). Stripe Status: ${info.stripe_status}` 
-      });
-    } else {
-      setTestResult({ status: 'error', message: 'Dados do perfil não carregados no SubscriptionContext. Tente atualizar a página.' });
-    }
-  };
-
-  // Check if within 30 days of subscription start (for refund eligibility)
-  const [canRefund, setCanRefund] = useState(false);
-  useEffect(() => {
-    if (info?.subscription_end) {
-      const end = new Date(info.subscription_end);
-      const start = new Date(end);
-      start.setFullYear(start.getFullYear() - 1);
-      const daysSinceStart = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24));
-      setCanRefund(daysSinceStart <= 30);
-    }
-  }, [info]);
-
-  const handleReset = () => {
-    resetAllData();
-    setConfirmReset(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     onClose();
-    window.location.reload();
   };
 
-  const handleGeminiPaste = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text) setGeminiKey(text);
-    } catch {
-      toast.error('Não foi possível acessar a área de transferência.');
-    }
-  };
-
-  const handleGeminiSave = () => {
-    if (!geminiKey.trim()) return;
-    localStorage.setItem('gemini-api-key', geminiKey.trim());
-    setGeminiHasKey(true);
+  const saveGeminiKey = () => {
+    localStorage.setItem('gemini_api_key', geminiKey);
     toast.success(t('geminiApiKeySaved'));
   };
 
-  const handleGeminiDelete = () => {
-    localStorage.removeItem('gemini-api-key');
-    setGeminiKey('');
-    setGeminiHasKey(false);
-    toast.success(t('geminiApiKeyDeleted'));
-  };
-
-  const openGeminiMenu = () => {
-    const saved = localStorage.getItem('gemini-api-key');
-    setGeminiKey(saved || '');
-    setSubMenu('gemini');
-  };
-
   const menuItems = [
-    { id: 'themes' as SubMenu, icon: Palette, label: t('themes'), desc: t('themeDesc') },
-    { id: 'languages' as SubMenu, icon: Globe, label: t('languages'), desc: t('langDesc') },
-    { id: 'preferences' as SubMenu, icon: Settings, label: t('preferences'), desc: t('prefDesc') },
-    { id: 'gemini' as SubMenu, icon: Key, label: t('geminiApiKey'), desc: geminiHasKey ? t('geminiConfigured') : t('geminiNotConfigured') },
-    { id: 'payment' as SubMenu, icon: CreditCard, label: t('payment'), desc: t('paymentDesc') },
-    { id: 'about' as SubMenu, icon: Info, label: t('about'), desc: t('aboutDesc') },
+    { id: 'settings', label: t('preferences'), icon: Settings, desc: t('prefDesc') },
+    { id: 'subscription', label: t('payment'), icon: CreditCard, desc: t('paymentDesc') },
+    { id: 'language', label: t('languages'), icon: Globe, desc: t('langDesc') },
+    { id: 'gemini', label: t('geminiApiKey'), icon: Key, desc: t('geminiApiKeyDesc') },
+    { id: 'about', label: t('about'), icon: Info, desc: t('aboutDesc') },
   ];
 
   const renderSubMenu = () => {
     switch (subMenu) {
-      case 'themes':
+      case 'settings':
         return (
-          <div className="space-y-2">
-            {([['light', Sun, t('light')], ['dark', Moon, t('dark')]] as [ThemeMode, any, string][]).map(([val, Icon, label]) => (
-              <button
-                key={val}
-                onClick={() => setTheme(val)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${theme === val ? 'bg-primary/10 border border-primary/30' : 'bg-card border border-border'}`}
-              >
-                <Icon className={`w-5 h-5 ${theme === val ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`text-sm font-medium ${theme === val ? 'text-primary' : 'text-foreground'}`}>{label}</span>
-                {theme === val && <Check className="w-4 h-4 text-primary ml-auto" />}
-              </button>
-            ))}
-            <button
-              onClick={() => setLargeText(!largeText)}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${largeText ? 'bg-primary/10 border border-primary/30' : 'bg-card border border-border'}`}
-            >
-              <Type className={`w-5 h-5 ${largeText ? 'text-primary' : 'text-muted-foreground'}`} />
-              <span className={`text-sm font-medium ${largeText ? 'text-primary' : 'text-foreground'}`}>{t('largeText')}</span>
-              {largeText && <Check className="w-4 h-4 text-primary ml-auto" />}
-            </button>
-          </div>
-        );
-
-      case 'languages':
-        return (
-          <div className="space-y-2">
-            {([['pt', '🇧🇷', 'Português'], ['en', '🇺🇸', 'English'], ['es', '🇪🇸', 'Español']] as [Lang, string, string][]).map(([val, flag, label]) => (
-              <button
-                key={val}
-                onClick={() => setLang(val)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${lang === val ? 'bg-primary/10 border border-primary/30' : 'bg-card border border-border'}`}
-              >
-                <span className="text-lg">{flag}</span>
-                <span className={`text-sm font-medium ${lang === val ? 'text-primary' : 'text-foreground'}`}>{label}</span>
-                {lang === val && <Check className="w-4 h-4 text-primary ml-auto" />}
-              </button>
-            ))}
-          </div>
-        );
-
-      case 'preferences':
-        return (
-          <div className="space-y-4">
-            <div className="bg-card rounded-xl border border-border p-4">
-              <p className="text-sm font-medium text-foreground mb-1">{t('stockExpiry')}</p>
-              <p className="text-xs text-muted-foreground mb-3">{stockExpiryDays} {t('days')}</p>
-              <input
-                type="range"
-                min={2}
-                max={120}
-                value={stockExpiryDays}
-                onChange={(e) => setStockExpiryDays(Number(e.target.value))}
-                className="w-full accent-primary"
-              />
-              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                <span>2 {t('days')}</span>
-                <span>120 {t('days')}</span>
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('stockExpiry')}</label>
+              <div className="space-y-6">
+                <Slider 
+                  value={[stockExpiryDays]} 
+                  onValueChange={v => { setStockExpiryDays(v[0]); localStorage.setItem('stock_expiry_days', v[0].toString()); }}
+                  max={120} min={7} step={1}
+                />
+                <div className="flex justify-between text-xs font-bold text-foreground">
+                  <span>7 {t('days')}</span>
+                  <span className="text-primary bg-primary/10 px-2 py-1 rounded-md">{stockExpiryDays} {t('days')}</span>
+                  <span>120 {t('days')}</span>
+                </div>
               </div>
+            </div>
+
+            <div className="pt-4 border-t border-border space-y-3">
+              <Button 
+                variant="outline" 
+                onClick={() => { if(confirm(t('confirmReset'))) resetAllData(); }}
+                className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/5 border-destructive/20 gap-3 h-12"
+              >
+                <Trash2 className="w-4 h-4" />
+                <div className="text-left">
+                  <p className="text-sm font-bold leading-none mb-1">{t('resetAll')}</p>
+                  <p className="text-[10px] opacity-60 font-medium">{t('resetDesc')}</p>
+                </div>
+              </Button>
             </div>
           </div>
         );
-
       case 'gemini':
         return (
-          <div className="space-y-4">
-            <div className="bg-card rounded-xl border border-border p-4">
-              <p className="text-xs text-muted-foreground mb-3">{t('geminiApiKeyDesc')}</p>
-              <input
-                type="text"
-                value={geminiKey}
-                onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder={t('geminiPlaceholder')}
-                className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={handleGeminiPaste}
-                  className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                >
-                  <ClipboardPaste className="w-4 h-4" />
-                  {t('geminiPaste')}
-                </button>
-                <button
-                  onClick={handleGeminiDelete}
-                  className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                  {t('geminiDelete')}
-                </button>
-                <button
-                  onClick={handleGeminiSave}
-                  className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                  <Save className="w-4 h-4" />
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {t('geminiApiKeyDesc')}
+              </p>
+              <div className="flex gap-2">
+                <Input 
+                  value={geminiKey} 
+                  onChange={e => setGeminiKey(e.target.value)}
+                  placeholder={t('geminiPlaceholder')}
+                  className="font-mono text-xs"
+                />
+                <Button onClick={saveGeminiKey} className="gradient-primary text-white font-bold">
                   {t('geminiSave')}
-                </button>
+                </Button>
               </div>
-
-              {/* Test Actions */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <button 
-                  onClick={testConnectivity}
-                  className="flex flex-col items-center justify-center p-3 rounded-lg border border-border bg-accent/30 hover:bg-accent/50 transition-colors gap-1"
-                >
-                  <Send className="w-4 h-4 text-primary" />
-                  <span className="text-[10px] font-bold text-center">Testar Conexão IA</span>
-                </button>
-
-                <button 
-                  onClick={checkSubscriptionData}
-                  className="flex flex-col items-center justify-center p-3 rounded-lg border border-border bg-accent/30 hover:bg-accent/50 transition-colors gap-1"
-                >
-                  <Database className="w-4 h-4 text-primary" />
-                  <span className="text-[10px] font-bold text-center">Ver Dados Perfil</span>
-                </button>
-              </div>
-
-              {/* Results Console */}
-              {testResult.status !== 'idle' && (
-                <div className={`mt-3 p-3 rounded-lg border flex gap-2 ${
-                  testResult.status === 'loading' ? 'bg-accent/20 border-border' :
-                  testResult.status === 'success' ? 'bg-green-500/10 border-green-500/30' :
-                  'bg-destructive/10 border-destructive/30'
-                }`}>
-                  {testResult.status === 'loading' ? (
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent animate-spin rounded-full mt-0.5 shrink-0" />
-                  ) : testResult.status === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
-                  )}
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-tight">Diagnóstico</p>
-                    <p className="text-xs text-foreground break-words line-clamp-3">{testResult.message}</p>
-                  </div>
-                </div>
-              )}
             </div>
-            <div className="bg-accent/50 rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <HelpCircle className="w-4 h-4 text-primary shrink-0" />
-                <p className="text-sm font-semibold text-foreground">{t('geminiHelpTitle')}</p>
-              </div>
-              <p className="text-xs text-muted-foreground whitespace-pre-line">{t('geminiHelpSteps')}</p>
-              <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-xs text-primary underline">
-                https://aistudio.google.com/
+
+            <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-widest text-foreground">{t('geminiHelpTitle')}</h4>
+              <p className="text-[11px] text-muted-foreground whitespace-pre-line leading-relaxed">
+                {t('geminiHelpSteps')}
+              </p>
+              <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-primary font-bold underline flex items-center gap-1">
+                Acessar AI Studio <ChevronRight className="w-3 h-3" />
               </a>
             </div>
           </div>
         );
-
-      case 'payment':
+      case 'subscription':
         return (
-          <div className="space-y-2">
-            <button
-              onClick={() => { openCheckout(); onClose(); }}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
-            >
-              <RefreshCw className="w-5 h-5 text-primary" />
-              <div className="text-left flex-1">
-                <p className="text-sm font-medium text-foreground">{t('renew')}</p>
-                <p className="text-xs text-muted-foreground">{t('renewDesc')}</p>
-              </div>
-            </button>
-            {canRefund && (
-              <button
-                onClick={() => { openPortal(); onClose(); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
-              >
-                <Undo2 className="w-5 h-5 text-destructive" />
-                <div className="text-left flex-1">
-                  <p className="text-sm font-medium text-foreground">{t('refund')}</p>
-                  <p className="text-xs text-muted-foreground">{t('refundDesc')}</p>
-                </div>
-              </button>
-            )}
+          <div className="space-y-4">
+            <Button onClick={() => openCheckout()} className="w-full gradient-primary text-white h-12 font-bold shadow-lg">
+              {t('renew')}
+            </Button>
+            <Button variant="outline" onClick={() => openPortal()} className="w-full h-12 font-bold border-border">
+              {t('paymentDesc')}
+            </Button>
           </div>
         );
-
+      case 'language':
+        return (
+          <div className="grid gap-2">
+            {(['pt', 'en', 'es'] as Lang[]).map(l => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`p-4 rounded-xl border flex items-center justify-between font-bold transition-all ${
+                  lang === l ? 'bg-primary/5 border-primary text-primary' : 'bg-card border-border'
+                }`}
+              >
+                {l === 'pt' ? 'Português' : l === 'en' ? 'English' : 'Español'}
+                {lang === l && <Check className="w-4 h-4" />}
+              </button>
+            ))}
+          </div>
+        );
       case 'about':
         return (
-          <div className="space-y-4 text-center">
-            <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto">
-              <span className="text-2xl">🌿</span>
+          <div className="space-y-6">
+            <div className="text-center py-6">
+              <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+                <span className="text-3xl">🌿</span>
+              </div>
+              <h3 className="text-xl font-black text-foreground">Magicmart AI</h3>
+              <p className="text-xs text-muted-foreground font-medium italic">Sua despensa inteligente</p>
             </div>
-            <h3 className="text-lg font-bold text-foreground">Magicmart AI</h3>
-            <p className="text-sm text-muted-foreground">{t('developedBy')}</p>
-            <p className="text-xs text-muted-foreground">{t('termsText')}</p>
-            <div className="flex flex-col gap-1">
-              <a href="https://idapps.com.br/privacy" target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">
-                https://idapps.com.br/privacy
-              </a>
-              <a href="https://idapps.com.br/terms" target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">
-                https://idapps.com.br/terms
-              </a>
+            
+            <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {t('developedBy')}<br />
+                {t('termsText')}
+              </p>
+              <div className="flex gap-4">
+                <a href="https://idapps.com.br/privacy" target="_blank" className="text-[10px] font-black uppercase text-primary tracking-widest underline">Privacidade</a>
+                <a href="https://idapps.com.br/terms" target="_blank" className="text-[10px] font-black uppercase text-primary tracking-widest underline">Termos</a>
+              </div>
             </div>
           </div>
         );
+      default:
+        return null;
     }
   };
 
+  if(!open) return null;
+
   return (
-    <>
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
-              className="fixed inset-0 bg-black/50 z-50"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed right-0 top-0 bottom-0 w-[85%] max-w-sm bg-background z-50 shadow-2xl overflow-y-auto"
-            >
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  {subMenu ? (
-                    <button onClick={() => setSubMenu(null)} className="p-1">
-                      <ArrowLeft className="w-5 h-5 text-foreground" />
-                    </button>
-                  ) : (
-                    <h2 className="text-lg font-bold text-foreground">{t('menu')}</h2>
-                  )}
-                  <button onClick={onClose} className="p-1">
-                    <X className="w-5 h-5 text-muted-foreground" />
+    <div className="fixed inset-0 z-[100] flex justify-end">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+      />
+      
+      <motion.div 
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="relative w-full max-w-[320px] bg-background h-full shadow-2xl flex flex-col"
+      >
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h2 className="text-lg font-black text-foreground">{subMenu ? menuItems.find(m => m.id === subMenu)?.label : t('menu')}</h2>
+            {!subMenu && <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{info?.email}</p>}
+          </div>
+          <button onClick={onClose} className="p-2 -mr-2 bg-secondary/50 rounded-full text-foreground hover:bg-secondary">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+          <AnimatePresence mode="wait">
+            {!subMenu ? (
+              <motion.div 
+                key="main"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="space-y-1.5"
+              >
+                {menuItems.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setSubMenu(item.id)}
+                    className="w-full p-4 rounded-2xl flex items-center gap-4 hover:bg-muted/50 transition-all text-left group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <item.icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{item.desc}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/30" />
                   </button>
+                ))}
+
+                <div className="pt-8 space-y-1.5">
+                  <button onClick={handleLogout} className="w-full p-4 rounded-2xl flex items-center gap-4 text-destructive hover:bg-destructive/5 transition-colors text-left group">
+                    <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+                      <LogOut className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{t('logout')}</p>
+                      <p className="text-[11px] opacity-60 truncate">{t('logoutDesc')}</p>
+                    </div>
+                  </button>
+
+                  {devMode && (
+                    <button 
+                      onClick={() => { setDevMode(false); onClose(); }} 
+                      className="w-full p-4 mt-4 rounded-xl border border-warning/30 bg-warning/5 text-warning flex items-center gap-3 text-left"
+                    >
+                      <ShieldCheck className="w-5 h-5" />
+                      <div>
+                        <p className="text-xs font-bold leading-none mb-1">Desativar Modo Dev</p>
+                        <p className="text-[10px] font-medium opacity-70">Voltar ao fluxo normal</p>
+                      </div>
+                    </button>
+                  )}
                 </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="sub"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+              >
+                <button 
+                  onClick={() => setSubMenu(null)}
+                  className="mb-6 flex items-center gap-2 text-xs font-black uppercase text-primary tracking-widest hover:opacity-70 transition-opacity"
+                >
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                  Voltar ao Menu
+                </button>
+                {renderSubMenu()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-                {/* User info at the top */}
-                {!subMenu && info && (
-                  <div className="mb-4 p-3 rounded-xl bg-card border border-border">
-                    <p className="text-sm font-bold text-foreground">{info.display_name}</p>
-                    <p className="text-xs text-muted-foreground">{info.email}</p>
-                  </div>
-                )}
+        <div className="p-6 border-t border-border bg-muted/10 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40">
+            Magicmart AI • v1.0.6
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
-                {subMenu ? (
-                  <div>
-                    <h3 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wider">
-                      {menuItems.find(m => m.id === subMenu)?.label}
-                    </h3>
-                    {renderSubMenu()}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {menuItems.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => item.id === 'gemini' ? openGeminiMenu() : setSubMenu(item.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
-                      >
-                        <item.icon className="w-5 h-5 text-primary" />
-                        <div className="text-left flex-1">
-                          <p className="text-sm font-medium text-foreground">{item.label}</p>
-                          <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    ))}
-
-                    <div className="border-t border-border my-3" />
-
-                    <button
-                      onClick={() => setConfirmReset(true)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
-                    >
-                      <RotateCcw className="w-5 h-5 text-destructive" />
-                      <div className="text-left flex-1">
-                        <p className="text-sm font-medium text-destructive">{t('resetAll')}</p>
-                        <p className="text-xs text-muted-foreground">{t('resetDesc')}</p>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        await supabase.auth.signOut();
-                        setDevMode(false);
-                        onClose();
-                      }}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
-                    >
-                      <LogOut className="w-5 h-5 text-muted-foreground" />
-                      <div className="text-left flex-1">
-                        <p className="text-sm font-medium text-foreground">{t('logout')}</p>
-                        <p className="text-xs text-muted-foreground">{t('logoutDesc')}</p>
-                      </div>
-                    </button>
-
-                    {devMode && (
-                      <button
-                        onClick={() => {
-                          setDevMode(false);
-                          onClose();
-                          toast.success('Modo Desenvolvedor desativado');
-                        }}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 transition-colors mt-2"
-                      >
-                        <Settings className="w-5 h-5 text-orange-500" />
-                        <div className="text-left flex-1">
-                          <p className="text-sm font-medium text-orange-500">Desativar Modo Desenvolvedor</p>
-                          <p className="text-xs text-muted-foreground text-orange-500/70">Voltar ao fluxo normal de auth</p>
-                        </div>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('resetAll')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('confirmReset')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {t('confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+function Check({ className }: { className?: string }) {
+  return (
+    <svg 
+      className={className} 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor" 
+      strokeWidth={3}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
   );
 }

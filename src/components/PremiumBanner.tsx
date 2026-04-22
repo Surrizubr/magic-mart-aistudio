@@ -1,29 +1,24 @@
-import { Crown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Sparkles } from 'lucide-react';
 
-interface PremiumBannerProps {
-  onUpgrade: () => void;
-}
-
-export function PremiumBanner({ onUpgrade }: PremiumBannerProps) {
+export function PremiumBanner() {
+  const { status } = useSubscription();
   const { t, currency } = useLanguage();
+
+  if (status !== 'active') return null;
+
   return (
-    <button
-      onClick={onUpgrade}
-      className="mx-4 mb-2 p-3 rounded-xl gradient-primary flex items-center gap-3 w-[calc(100%-2rem)] text-left shadow-md"
-    >
-      <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center shrink-0">
-        <Crown className="w-5 h-5 text-primary-foreground" />
+    <div className="mx-4 mt-4 p-5 rounded-[32px] bg-card border border-border flex items-center gap-4 group transition-all hover:border-primary/30 shadow-sm">
+      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+        <Sparkles className="w-6 h-6 text-primary" />
       </div>
-      <div className="flex-1">
-        <p className="text-sm font-bold text-primary-foreground">{t('premiumTitle')}</p>
-        <p className="text-[11px] text-primary-foreground/80">
-          {t('premiumDesc')} {currency} 49,90{t('premiumPerYear')}
+      <div>
+        <h3 className="text-sm font-black text-foreground uppercase tracking-widest leading-none mb-1.5">{t('premiumTitle')}</h3>
+        <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+          {t('premiumDesc')} <span className="text-foreground font-black">{currency} 49,90{t('premiumPerYear')}</span>
         </p>
       </div>
-      <span className="text-xs font-bold text-primary-foreground bg-primary-foreground/20 px-2 py-1 rounded-full">
-        {t('premiumSubscribe')}
-      </span>
-    </button>
+    </div>
   );
 }

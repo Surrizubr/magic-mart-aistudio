@@ -55,40 +55,47 @@ export function calculateConsumptionRate(
 }
 
 /**
- * Recalculates consumption rates for all stock items based on purchase history.
- * Call this after saving new purchases.
+ * Recalculates consumption rates for provided stock items based on purchase history.
+ * Returns the updated stock array.
  */
-export function recalculateAllConsumptionRates(): void {
-  const stock = JSON.parse(localStorage.getItem('stock_items') || '[]');
-  const history: PurchaseHistory[] = JSON.parse(localStorage.getItem('purchase_history') || '[]');
+export function recalculateStockRates(stock: any[], history: PurchaseHistory[]): any[] {
+  if (stock.length === 0) return stock;
 
-  if (stock.length === 0) return;
-
-  let changed = false;
-  stock.forEach((item: any) => {
+  return stock.map((item: any) => {
+    const newItem = { ...item };
     // Update last_purchase_date from history
     const matches = history
       .filter(h => h.product_name.toLowerCase() === item.product_name.toLowerCase())
       .map(h => h.purchase_date)
       .sort()
       .reverse();
-    if (matches.length > 0 && item.last_purchase_date !== matches[0]) {
-      item.last_purchase_date = matches[0];
-      changed = true;
+    
+    if (matches.length > 0) {
+      newItem.last_purchase_date = matches[0];
     }
 
     // Learn consumption rate when we have 2+ purchases
     const result = calculateConsumptionRate(item.product_name, history);
     if (result.purchaseCount >= 2) {
-      item.daily_consumption_rate = result.rate;
-      item.learned_consumption = true;
-      item.purchase_count = result.purchaseCount;
-      item.avg_duration_days = result.avgDurationDays;
-      changed = true;
+      newItem.daily_consumption_rate = result.rate;
+      newItem.learned_consumption = true;
+      newItem.purchase_count = result.purchaseCount;
+      newItem.avg_duration_days = result.avgDurationDays;
     }
+    return newItem;
   });
+}
 
-  if (changed) {
-    localStorage.setItem('stock_items', JSON.stringify(stock));
-  }
+/**
+ * Legacy wrapper for compatibility.
+ * Considers localStorage as source and target.
+ */
+export function recalculateAllConsumptionRates(): void {
+  const stock = JSON.parse(localStorage.getItem('stock_items') || '[]');
+  const history: PurchaseHistory[] = JSON.parse(localStorage.getItem('purchase_history') || '[]');
+  
+  if (stock.length === 0) return;
+
+  const updatedStock = recalculateStockRates(stock, history);
+  localStorage.setItem('stock_items', JSON.stringify(updatedStock));
 }

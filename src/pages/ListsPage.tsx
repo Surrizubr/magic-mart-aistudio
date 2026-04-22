@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { recalculateAllConsumptionRates } from '@/lib/consumptionCalculator';
+import { recalculateStockRates } from '@/lib/consumptionCalculator';
 import { REMINDER_LIST_NAME_CONST } from '@/lib/reminderList';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
@@ -46,7 +46,7 @@ export function ListsPage({ onBack }: ListsPageProps) {
     setShowNewList(false);
   };
 
-  const handleFinishShopping = (updatedList: ShoppingList, checkedItems: ShoppingListItem[], storeName: string) => {
+  const handleFinishShopping = async (updatedList: ShoppingList, checkedItems: ShoppingListItem[], storeName: string) => {
     setLists(prev => prev.map(l => l.id === updatedList.id ? updatedList : l));
     const existingStock: StockItem[] = getStock();
     checkedItems.forEach(item => {
@@ -63,8 +63,7 @@ export function ListsPage({ onBack }: ListsPageProps) {
         });
       }
     });
-    saveStock(existingStock);
-    recalculateAllConsumptionRates();
+
     const history = getHistory();
     checkedItems.forEach(item => {
       history.push({
@@ -76,7 +75,10 @@ export function ListsPage({ onBack }: ListsPageProps) {
         list_id: updatedList.id,
       });
     });
-    saveHistory(history);
+
+    const updatedStockWithRates = recalculateStockRates(existingStock, history);
+    await saveStock(updatedStockWithRates);
+    await saveHistory(history);
     setSelectedList(null);
   };
 

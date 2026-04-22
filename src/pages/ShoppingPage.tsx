@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { recalculateAllConsumptionRates } from '@/lib/consumptionCalculator';
+import { recalculateStockRates } from '@/lib/consumptionCalculator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
 import { ArrowLeft, ListChecks, Camera, Search, MapPin, X, Plus, Minus, ShoppingCart, XCircle, CheckCircle, Loader2, RotateCcw, Send } from 'lucide-react';
-import { TabId } from '@/types';
+import { TabId, StockItem, PurchaseHistory } from '@/types';
 import { toast } from 'sonner';
 import { analyzeWithGemini, PRODUCT_PROMPT } from '@/services/geminiService';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { getStock, saveStock, getHistory, saveHistory } from '@/data/mockData';
 
 type ShoppingMode = null | 'list' | 'register' | 'category';
 
@@ -127,20 +128,27 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
     ));
   };
 
-  const finishShopping = () => {
+  const finishShopping = async () => {
     if (items.length === 0) {
       toast.error('Nenhum item adicionado');
       return;
     }
+    
     // Save to stock
-    const existing: any[] = JSON.parse(localStorage.getItem('stock_items') || '[]');
+    const existing = getStock();
+    const newStock = [...existing];
+    
     items.forEach(item => {
-      const idx = existing.findIndex((e: any) => e.product_name.toLowerCase() === item.product_name.toLowerCase());
+      const idx = newStock.findIndex(e => e.product_name.toLowerCase() === item.product_name.toLowerCase());
       if (idx >= 0) {
-        existing[idx].quantity += item.quantity;
-        existing[idx].last_price = item.price;
+        newStock[idx] = {
+          ...newStock[idx],
+          quantity: newStock[idx].quantity + item.quantity,
+          last_price: item.price,
+          last_purchase_date: new Date().toISOString()
+        };
       } else {
-        existing.push({
+        newStock.push({
           id: crypto.randomUUID(),
           product_name: item.product_name,
           category: item.category,
@@ -150,16 +158,19 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
           daily_consumption_rate: 0.1,
           status: 'ok',
           last_price: item.price,
+          last_purchase_date: new Date().toISOString()
         });
       }
     });
-    localStorage.setItem('stock_items', JSON.stringify(existing));
-    recalculateAllConsumptionRates();
-
+    
+    await saveStock(newStock);
+    
     // Save to history
-    const history: any[] = JSON.parse(localStorage.getItem('purchase_history') || '[]');
+    const history = getHistory();
+    const newHistory = [...history];
+    
     items.forEach(item => {
-      history.push({
+      newHistory.push({
         id: crypto.randomUUID(),
         product_name: item.product_name,
         category: item.category,
@@ -170,7 +181,11 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
         purchase_date: new Date().toISOString(),
       });
     });
-    localStorage.setItem('purchase_history', JSON.stringify(history));
+    
+    // Recalculate rates before final save to keep cache consistent
+    const updatedStockWithRates = recalculateStockRates(newStock, newHistory);
+    await saveStock(updatedStockWithRates);
+    await saveHistory(newHistory);
 
     toast.success(`${items.length} itens adicionados ao estoque`);
     onNavigate('home');

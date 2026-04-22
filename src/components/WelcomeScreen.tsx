@@ -8,43 +8,52 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ isLoading, children }: WelcomeScreenProps) {
   return (
-    <div className="fixed inset-0 w-full h-screen flex flex-col items-center justify-center overflow-hidden bg-[#f0f4f0]">
-      {/* Presentation Image as background */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src="/app_presentation.png" 
-          alt="Presentation"
-          className="w-full h-full object-cover lg:object-contain" // Contain on large to preserve aspect ratio, cover on mobile
-          onError={(e) => {
-            console.error("Presentation image failed to load");
-          }}
-          referrerPolicy="no-referrer"
-        />
-        {/* Subtle overlay to soften the image and improve text/button contrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent z-10" />
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 bg-background space-y-12 animate-in fade-in duration-500">
+      <div className="text-center space-y-4">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-24 h-24 rounded-3xl gradient-primary flex items-center justify-center mx-auto shadow-2xl relative"
+        >
+          <span className="text-5xl drop-shadow-md">🌿</span>
+          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+            <span className="text-xs">✨</span>
+          </div>
+        </motion.div>
+        
+        <div className="space-y-2">
+          <h1 className="text-4xl font-black tracking-tighter text-foreground">Magicmart AI</h1>
+          <p className="text-sm text-muted-foreground font-semibold uppercase tracking-[0.2em] opacity-70">
+            Sua despensa inteligente
+          </p>
+        </div>
       </div>
 
-      {/* Content strictly at the bottom */}
-      <div className="relative z-20 w-full max-w-sm h-full flex flex-col justify-end items-center pb-20 px-8">
+      <div className="w-full max-w-[260px] flex flex-col items-center justify-center min-h-[120px]">
         {isLoading ? (
-          <div className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <p className="text-sm font-semibold text-center text-[#2D5A27] drop-shadow-sm tracking-tight bg-white/30 backdrop-blur-sm py-1 rounded-full">
+          <div className="w-full space-y-5 text-center px-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <p className="text-[13px] font-bold text-muted-foreground/80 lowercase tracking-tight">
               carregando a aplicação. Aguarde.
             </p>
-            <div className="w-full h-1.5 bg-slate-200/50 backdrop-blur-md rounded-full overflow-hidden border border-white/20 shadow-sm">
+            <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden shadow-inner">
               <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: "100%" }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                className="h-full w-1/2 bg-[#2D5A27] rounded-full" 
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="h-full gradient-primary"
               />
             </div>
           </div>
         ) : (
-          <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="w-full animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200">
             {children}
           </div>
         )}
+      </div>
+      
+      <div className="fixed bottom-8 text-[10px] text-muted-foreground/40 font-bold uppercase tracking-widest">
+        v2.0.4 • secure access
       </div>
     </div>
   );

@@ -225,19 +225,19 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
                     <motion.div 
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="py-4 flex items-center gap-4"
+                      className="py-6 flex items-center gap-4"
                     >
-                      <div className="flex-1 h-px bg-gradient-to-r from-primary/30 to-transparent" />
+                      <div className="flex-1 h-1 bg-gradient-to-r from-primary/30 to-transparent rounded-full" />
                       <span className="text-[10px] uppercase tracking-[0.2em] font-black text-primary/60 bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
                         {monthLabel}
                       </span>
-                      <div className="flex-1 h-px bg-gradient-to-l from-primary/30 to-transparent" />
+                      <div className="flex-1 h-1 bg-gradient-to-l from-primary/30 to-transparent rounded-full" />
                     </motion.div>
                   )}
 
                   {/* Store Separator Line (if not the first item in the month) */}
                   {!showMonthDivider && index > 0 && (
-                    <div className="h-px w-full bg-border/40 my-4" />
+                    <div className="h-1.5 w-full bg-accent/20 my-6 rounded-full" />
                   )}
 
                   <div className="mb-6">

@@ -5,6 +5,7 @@ import { getHistory } from '@/data/mockData';
 import { AlertTriangle, Info, MapPin, X, ChevronRight, TrendingDown, TrendingUp, Store, ArrowDown, ArrowUp, LocateFixed, Calendar } from 'lucide-react';
 import { PurchaseHistory } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Button } from '@/components/ui/button';
 
 const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 

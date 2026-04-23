@@ -133,38 +133,44 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
   // Product price variation logic for discounts and increases
   const productVariations = (() => {
     const sorted = [...allHistory].sort((a, b) => a.purchase_date.localeCompare(b.purchase_date));
-    const latestVariations: Record<string, { name: string; variation: number; currentPrice: number; prevPrice: number }> = {};
+    const latestVariations: Record<string, { name: string; variation: number; currentPrice: number; prevPrice: number; currentStore: string; prevStore: string }> = {};
     const lastPrices: Record<string, number> = {};
+    const lastStores: Record<string, string> = {};
 
     sorted.forEach(item => {
       const name = item.product_name;
       const lowerName = name.toLowerCase();
       const currentPrice = item.price;
+      const currentStore = item.store_name;
       
       if (lastPrices[lowerName] !== undefined) {
         const prevPrice = lastPrices[lowerName];
+        const prevStore = lastStores[lowerName];
         if (prevPrice > 0 && Math.abs(currentPrice - prevPrice) > 0.001) {
           latestVariations[lowerName] = {
             name: name,
             variation: ((currentPrice - prevPrice) / prevPrice) * 100,
             currentPrice: currentPrice,
-            prevPrice: prevPrice
+            prevPrice: prevPrice,
+            currentStore,
+            prevStore
           };
         }
       }
       lastPrices[lowerName] = currentPrice;
+      lastStores[lowerName] = currentStore;
     });
 
     const variations = Object.values(latestVariations);
     const discounts = variations
       .filter(v => v.variation < -0.1)
       .sort((a, b) => a.variation - b.variation) // Most negative (best discount) first
-      .slice(0, 5);
+      .slice(0, 20);
     
     const increases = variations
       .filter(v => v.variation > 0.1)
       .sort((a, b) => b.variation - a.variation) // Most positive (biggest increase) first
-      .slice(0, 5);
+      .slice(0, 20);
 
     return { discounts, increases };
   })();
@@ -396,14 +402,19 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
               Produtos com melhores descontos
             </h3>
           </div>
-          <div className="space-y-3">
+          <div className="max-h-[350px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
             {productVariations.discounts.map((v) => (
               <div key={v.name} className="flex items-center justify-between bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-foreground truncate">{v.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    de {fc(v.prevPrice)} para {fc(v.currentPrice)}
-                  </p>
+                  <div className="space-y-0.5 mt-1">
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <span className="font-medium">De:</span> {fc(v.prevPrice)} <span className="opacity-70">at {v.prevStore}</span>
+                    </p>
+                    <p className="text-[10px] text-emerald-700 flex items-center gap-1">
+                      <span className="font-bold">Para:</span> {fc(v.currentPrice)} <span className="opacity-70">at {v.currentStore}</span>
+                    </p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-emerald-600 flex items-center justify-end gap-1">
@@ -427,14 +438,19 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
               Produtos com maiores aumentos
             </h3>
           </div>
-          <div className="space-y-3">
+          <div className="max-h-[350px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
             {productVariations.increases.map((v) => (
               <div key={v.name} className="flex items-center justify-between bg-destructive/5 rounded-lg p-3 border border-destructive/10">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-foreground truncate">{v.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    de {fc(v.prevPrice)} para {fc(v.currentPrice)}
-                  </p>
+                  <div className="space-y-0.5 mt-1">
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <span className="font-medium">De:</span> {fc(v.prevPrice)} <span className="opacity-70">at {v.prevStore}</span>
+                    </p>
+                    <p className="text-[10px] text-destructive flex items-center gap-1">
+                      <span className="font-bold">Para:</span> {fc(v.currentPrice)} <span className="opacity-70">at {v.currentStore}</span>
+                    </p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-destructive flex items-center justify-end gap-1">

@@ -480,6 +480,13 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
           >
             Continuar
           </button>
+          
+          <InstructionsBanner 
+            item2Text={mode === 'register' ? 
+              "Tire a foto do rótulo do produto que quer adicionar;" : 
+              "Adicione produtos manualmente a partir da lista de categorias;"
+            } 
+          />
         </div>
       </div>
     );
@@ -658,10 +665,6 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
               </div>
             </motion.div>
           )}
-
-          <div className="px-4 pb-4">
-            <InstructionsBanner item2Text="Tire a foto do rótulo do produto que quer adicionar;" />
-          </div>
         </div>
       )}
 
@@ -680,10 +683,6 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
                 {cat}
               </button>
             ))}
-          </div>
-          
-          <div className="px-4 pb-4">
-            <InstructionsBanner item2Text="Adicione produtos manualmente a partir da lista de categorias;" />
           </div>
         </div>
       )}
@@ -789,6 +788,15 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
             </motion.div>
           ))}
         </AnimatePresence>
+      </div>
+
+      <div className="px-4 pb-10">
+        <InstructionsBanner 
+          item2Text={mode === 'register' ? 
+            "Tire a foto do rótulo do produto que quer adicionar;" : 
+            "Adicione produtos manualmente a partir da lista de categorias;"
+          } 
+        />
       </div>
     </div>
   );

@@ -11,17 +11,18 @@ const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 function getLevelColor(level: number) {
   switch (level) {
-    case 0: return 'bg-primary/20';
-    case 1: return 'bg-destructive/60';
-    case 2: return 'bg-warning/60';
-    case 3: return 'bg-primary/40';
+    case 1: return 'bg-destructive/60'; // Muito caro
+    case 2: return 'bg-orange-500';    // Caro
+    case 3: return 'bg-primary/40';    // Normal
+    case 4: return 'bg-primary/80';    // Barato
+    case 5: return 'bg-emerald-500';   // Muito barato
     default: return 'bg-primary/20';
   }
 }
 
 function getWeekColor(val: number) {
   if (val === 0) return 'bg-primary/30';
-  return 'bg-warning';
+  return 'bg-primary/40'; // Normal color
 }
 
 interface StoreInfo {
@@ -81,9 +82,9 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
     // Count unique stores
     const uniqueStores = new Set(items.map(h => h.store_name)).size;
     let level = 0;
-    if (uniqueStores >= 3) level = 1;
-    else if (uniqueStores === 2) level = 2;
-    else if (uniqueStores === 1) level = 3;
+    if (uniqueStores >= 3) level = 1;      // Muito caro
+    else if (uniqueStores === 2) level = 2; // Caro
+    else if (uniqueStores === 1) level = 4; // Barato (using 4 for 'Barato' color)
     return { day: i + 1, level, storeCount: uniqueStores };
   });
 
@@ -283,19 +284,19 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
         {/* Legend */}
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-primary/80" />
+            <div className="w-4 h-4 rounded bg-emerald-500" />
             <span className="text-xs text-muted-foreground">Muito barato</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-primary/40" />
+            <div className="w-4 h-4 rounded bg-primary/80" />
             <span className="text-xs text-muted-foreground">Barato</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-warning" />
+            <div className="w-4 h-4 rounded bg-primary/40" />
             <span className="text-xs text-muted-foreground">Normal</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-destructive/40" />
+            <div className="w-4 h-4 rounded bg-orange-500" />
             <span className="text-xs text-muted-foreground">Caro</span>
           </div>
           <div className="flex items-center gap-1.5">

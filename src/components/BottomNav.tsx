@@ -1,22 +1,25 @@
 import { Home, ShoppingCart, Package, DollarSign, Clock, BarChart3 } from 'lucide-react';
 import { TabId } from '@/types';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BottomNavProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
 }
 
-const tabs: { id: TabId; label: string; icon: typeof Home }[] = [
-  { id: 'home', label: 'Início', icon: Home },
-  { id: 'lists', label: 'Listas', icon: ShoppingCart },
-  { id: 'stock', label: 'Estoque', icon: Package },
-  { id: 'savings', label: 'Economizar', icon: DollarSign },
-  { id: 'history', label: 'Histórico', icon: Clock },
-  { id: 'reports', label: 'Relatórios', icon: BarChart3 },
-];
-
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+  const { t } = useLanguage();
+
+  const tabs: { id: TabId; label: string; icon: typeof Home }[] = [
+    { id: 'home', label: t('home'), icon: Home },
+    { id: 'lists', label: t('lists'), icon: ShoppingCart },
+    { id: 'stock', label: t('stock'), icon: Package },
+    { id: 'savings', label: t('savings'), icon: DollarSign },
+    { id: 'history', label: t('history'), icon: Clock },
+    { id: 'reports', label: t('reports'), icon: BarChart3 },
+  ];
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-1">

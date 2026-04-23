@@ -25,7 +25,7 @@ const item = {
 };
 
 export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps) {
-  const { currency, formatCurrency: fc } = useLanguage();
+  const { lang, currency, formatCurrency: fc, t } = useLanguage();
   const [stockState, setStockState] = useState<StockItem[]>(() => getStock());
   const [listsState, setListsState] = useState<ShoppingList[]>(() => getLists());
   const history = getHistory();
@@ -44,7 +44,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
       localStorage.setItem('shopping_lists', JSON.stringify(updated));
       return updated;
     });
-    toast.success('Lista excluída.');
+    toast.success(t('listDeleted'));
   };
 
   const handleArchiveList = (id: string) => {
@@ -53,7 +53,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
       localStorage.setItem('shopping_lists', JSON.stringify(updated));
       return updated;
     });
-    toast.success('Lista arquivada.');
+    toast.success(t('listArchived'));
   };
 
   const handleDeleteAlert = (id: string) => {
@@ -62,7 +62,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
       localStorage.setItem('stock_items', JSON.stringify(updated));
       return updated;
     });
-    toast.success('Alerta removido.');
+    toast.success(t('alertRemoved'));
   };
 
   const handleAddAlertToReminder = (s: StockItem) => {
@@ -72,10 +72,10 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
       localStorage.setItem('stock_items', JSON.stringify(updated));
       return updated;
     });
-    toast.success('Adicionado à lista de compras.');
+    toast.success(t('addedToShoppingList'));
   };
   const today = new Date();
-  const dateStr = today.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateStr = today.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div className="pb-20">
@@ -91,7 +91,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
               <Settings className="w-6 h-6 text-primary-foreground" />
             </button>
             <div>
-              <p className="text-sm text-muted-foreground">Olá, {displayName || 'Usuário'} 👋</p>
+              <p className="text-sm text-muted-foreground">{t('hello')}, {displayName || t('user')} 👋</p>
               <h1 className="text-xl font-bold text-foreground">Magicmart AI</h1>
               <p className="text-xs text-muted-foreground capitalize">{dateStr}</p>
             </div>
@@ -103,19 +103,19 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
         {/* Stats Row */}
         <motion.div variants={item} className="flex gap-3">
           <button onClick={() => onNavigate('stock')} className="flex-1 bg-card rounded-xl border border-border p-3 text-center hover:bg-accent/50 transition-colors">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Estoque</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('stock')}</p>
             <p className="text-2xl font-bold text-foreground">{stockState.length}</p>
-            <p className="text-[10px] text-muted-foreground uppercase">Itens</p>
+            <p className="text-[10px] text-muted-foreground uppercase">{t('items')}</p>
           </button>
           <button onClick={() => onNavigate('lists')} className="flex-1 bg-card rounded-xl border border-primary/30 p-3 text-center hover:bg-accent/50 transition-colors">
-            <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Listas</p>
+            <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">{t('lists')}</p>
             <p className="text-2xl font-bold text-primary">{activeLists.length}</p>
-            <p className="text-[10px] text-primary uppercase">Ativas</p>
+            <p className="text-[10px] text-primary uppercase">{t('active')}</p>
           </button>
           <button onClick={() => onNavigate('history')} className="flex-1 bg-card rounded-xl border border-border p-3 text-center hover:bg-accent/50 transition-colors">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Histórico</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('history')}</p>
             <p className="text-xl font-bold text-foreground">{fc(totalMonth)}</p>
-            <p className="text-[10px] text-muted-foreground uppercase">Mês Atual</p>
+            <p className="text-[10px] text-muted-foreground uppercase">{t('currentMonth')}</p>
           </button>
         </motion.div>
 
@@ -127,8 +127,8 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             className="col-span-2 gradient-primary rounded-xl p-4 text-left"
           >
             <Plus className="w-6 h-6 text-primary-foreground mb-4" />
-            <p className="text-sm font-bold text-primary-foreground">Nova Lista</p>
-            <p className="text-xs text-primary-foreground/80">Criar lista de compras</p>
+            <p className="text-sm font-bold text-primary-foreground">{t('newList')}</p>
+            <p className="text-xs text-primary-foreground/80">{t('createList')}</p>
           </button>
           {/* Fazer Mercado */}
           <button
@@ -136,8 +136,8 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             className="col-span-3 bg-card rounded-xl border border-border p-4 text-left"
           >
             <ShoppingCart className="w-6 h-6 text-primary mb-4" />
-            <p className="text-sm font-bold text-foreground">Fazer Mercado</p>
-            <p className="text-xs text-muted-foreground">Adicionar produtos na cesta</p>
+            <p className="text-sm font-bold text-foreground">{t('goShopping')}</p>
+            <p className="text-xs text-muted-foreground">{t('addProducts')}</p>
           </button>
         </motion.div>
 
@@ -147,16 +147,16 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             className="bg-card rounded-xl border border-border p-4 text-left"
           >
             <ScanLine className="w-6 h-6 text-muted-foreground mb-2" />
-            <p className="text-sm font-bold text-foreground">Escanear</p>
-            <p className="text-xs text-muted-foreground">Nota fiscal</p>
+            <p className="text-sm font-bold text-foreground">{t('scan')}</p>
+            <p className="text-xs text-muted-foreground">{t('receipt')}</p>
           </button>
           <button
             onClick={() => onNavigate('share')}
             className="bg-card rounded-xl border border-border p-4 text-left"
           >
             <Share2 className="w-6 h-6 text-primary mb-2" />
-            <p className="text-sm font-bold text-foreground">Compartilhar</p>
-            <p className="text-xs text-muted-foreground">Listas ativas</p>
+            <p className="text-sm font-bold text-foreground">{t('share')}</p>
+            <p className="text-xs text-muted-foreground">{t('activeLists')}</p>
           </button>
         </motion.div>
 
@@ -169,7 +169,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
           >
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-yellow-700" />
-              <span className="text-sm font-semibold text-yellow-800">Dias de compras mais baratos</span>
+              <span className="text-sm font-semibold text-yellow-800">{t('cheapDays')}</span>
             </div>
             <ArrowRight className="w-4 h-4 text-yellow-700" />
           </button>
@@ -178,14 +178,14 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
         {/* Listas Ativas */}
         <motion.div variants={item}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Listas Ativas</h2>
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">{t('activeListsTitle')}</h2>
             <button onClick={() => onNavigate('lists')} className="text-xs text-primary font-medium flex items-center gap-0.5">
-              Ver todas <ArrowRight className="w-3 h-3" />
+              {t('seeAll')} <ArrowRight className="w-3 h-3" />
             </button>
           </div>
           {activeLists.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-xs text-muted-foreground">Nenhuma lista ativa</p>
+              <p className="text-xs text-muted-foreground">{t('noActiveLists')}</p>
             </div>
           ) : (
             <div className="max-h-[280px] overflow-y-auto pr-1 space-y-2" style={{ scrollbarWidth: 'thin' }}>
@@ -205,7 +205,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground">{l.name}</p>
-                      <p className="text-xs text-muted-foreground">{l.items.length} itens · {fc(l.estimated_total)}</p>
+                      <p className="text-xs text-muted-foreground">{l.items.length} {t('items')} · {fc(l.estimated_total)}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </button>
@@ -218,10 +218,10 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
         {/* Alertas */}
         <motion.div variants={item}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Alertas</h2>
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">{t('alerts')}</h2>
             <div className="flex items-center gap-2">
               <button onClick={() => onNavigate('stock')} className="text-xs text-primary font-medium flex items-center gap-0.5">
-                Ver todos <ArrowRight className="w-3 h-3" />
+                {t('seeAll')} <ArrowRight className="w-3 h-3" />
               </button>
               {criticalStock.length > 0 && (
                 <span className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
@@ -232,7 +232,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
           </div>
           {criticalStock.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-xs text-muted-foreground">Estoque em dia ✅</p>
+              <p className="text-xs text-muted-foreground">{t('stockUpToDate')}</p>
             </div>
           ) : (
             <div className="max-h-[280px] overflow-y-auto pr-1 space-y-2" style={{ scrollbarWidth: 'thin' }}>
@@ -253,8 +253,8 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
                         </div>
                         <div>
                           <p className="text-sm font-bold text-foreground uppercase">{s.product_name}</p>
-                          <p className={`text-xs font-semibold ${isCritical ? 'text-destructive' : 'text-warning'}`}>~{daysLeft} dias restantes</p>
-                          <p className="text-xs text-muted-foreground">Estoque: {s.quantity} {s.unit}</p>
+                          <p className={`text-xs font-semibold ${isCritical ? 'text-destructive' : 'text-warning'}`}>~{daysLeft} {t('daysLeft')}</p>
+                          <p className="text-xs text-muted-foreground">{t('stock')}: {s.quantity} {s.unit}</p>
                         </div>
                       </div>
                     </div>

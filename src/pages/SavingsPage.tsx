@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
 import { getHistory } from '@/data/mockData';
-import { AlertTriangle, Info, MapPin, X, ChevronRight, TrendingDown, Store } from 'lucide-react';
+import { AlertTriangle, Info, MapPin, X, ChevronRight, TrendingDown, TrendingUp, Store, ArrowDown, ArrowUp } from 'lucide-react';
 import { PurchaseHistory } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -130,6 +130,45 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
     setSelectedWeekDay(null);
   };
 
+  // Product price variation logic for discounts and increases
+  const productVariations = (() => {
+    const sorted = [...allHistory].sort((a, b) => a.purchase_date.localeCompare(b.purchase_date));
+    const latestVariations: Record<string, { name: string; variation: number; currentPrice: number; prevPrice: number }> = {};
+    const lastPrices: Record<string, number> = {};
+
+    sorted.forEach(item => {
+      const name = item.product_name;
+      const lowerName = name.toLowerCase();
+      const currentPrice = item.price;
+      
+      if (lastPrices[lowerName] !== undefined) {
+        const prevPrice = lastPrices[lowerName];
+        if (prevPrice > 0 && Math.abs(currentPrice - prevPrice) > 0.001) {
+          latestVariations[lowerName] = {
+            name: name,
+            variation: ((currentPrice - prevPrice) / prevPrice) * 100,
+            currentPrice: currentPrice,
+            prevPrice: prevPrice
+          };
+        }
+      }
+      lastPrices[lowerName] = currentPrice;
+    });
+
+    const variations = Object.values(latestVariations);
+    const discounts = variations
+      .filter(v => v.variation < -0.1)
+      .sort((a, b) => a.variation - b.variation) // Most negative (best discount) first
+      .slice(0, 5);
+    
+    const increases = variations
+      .filter(v => v.variation > 0.1)
+      .sort((a, b) => b.variation - a.variation) // Most positive (biggest increase) first
+      .slice(0, 5);
+
+    return { discounts, increases };
+  })();
+
   // Cheapest stores calculation
   const cheapestStores = (() => {
     const productPrices: Record<string, { min: number; stores: Record<string, number> }> = {};
@@ -194,8 +233,8 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
   return (
     <div className="pb-20">
       <PageHeader
-        title="Dias Mais Baratos"
-        subtitle="Análise de preços por dia"
+        title="Economizar"
+        subtitle="Análise de preços e economia"
         onBack={onBack}
       />
 
@@ -223,6 +262,8 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
             <p>Valor estimado. A economia real depende de disponibilidade, localização e variações de preço entre lojas.</p>
           </div>
         </div>
+
+        <h3 className="text-sm font-bold text-foreground px-1">Dias Mais Baratos</h3>
 
         {/* Legend */}
         <div className="flex flex-wrap gap-3">
@@ -344,6 +385,68 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
             <p className="text-[10px] text-muted-foreground italic leading-relaxed">
               * O Índice de Economia compara os preços pagos em cada local com o menor preço já registrado para os mesmos produtos. 100% indica que o local oferece consistentemente os melhores preços.
             </p>
+          </div>
+        </div>
+
+        {/* Top Discounts Card */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <TrendingDown className="w-4 h-4 text-emerald-500" />
+              Produtos com melhores descontos
+            </h3>
+          </div>
+          <div className="space-y-3">
+            {productVariations.discounts.map((v) => (
+              <div key={v.name} className="flex items-center justify-between bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{v.name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    de {fc(v.prevPrice)} para {fc(v.currentPrice)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-emerald-600 flex items-center justify-end gap-1">
+                    <ArrowDown className="w-3 h-3" />
+                    {Math.abs(v.variation).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            ))}
+            {productVariations.discounts.length === 0 && (
+              <p className="text-center text-xs text-muted-foreground py-4">Nenhuma queda de preço detectada recentemente.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Top Increases Card */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-destructive" />
+              Produtos com maiores aumentos
+            </h3>
+          </div>
+          <div className="space-y-3">
+            {productVariations.increases.map((v) => (
+              <div key={v.name} className="flex items-center justify-between bg-destructive/5 rounded-lg p-3 border border-destructive/10">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{v.name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    de {fc(v.prevPrice)} para {fc(v.currentPrice)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-destructive flex items-center justify-end gap-1">
+                    <ArrowUp className="w-3 h-3" />
+                    {Math.abs(v.variation).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            ))}
+            {productVariations.increases.length === 0 && (
+              <p className="text-center text-xs text-muted-foreground py-4">Nenhum aumento significativo detectado.</p>
+            )}
           </div>
         </div>
       </motion.div>

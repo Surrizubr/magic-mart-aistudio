@@ -579,35 +579,6 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Previous Purchase */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                      <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-                      Compra Anterior
-                    </div>
-                    <div className="bg-secondary/30 rounded-xl p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-foreground">{fc(selectedVariation.prevPrice)}</span>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(selectedVariation.prevDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', weekday: 'short' })}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Store className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span className="text-xs font-medium text-foreground truncate">{selectedVariation.prevStore}</span>
-                        </div>
-                        <button 
-                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVariation.prevStore)}`, '_blank')}
-                          className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                        >
-                          <LocateFixed className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Current Purchase */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-wider">
@@ -631,6 +602,35 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
                         </div>
                         <button 
                           onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVariation.currentStore)}`, '_blank')}
+                          className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <LocateFixed className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Previous Purchase */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                      Compra Anterior
+                    </div>
+                    <div className="bg-secondary/30 rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-foreground">{fc(selectedVariation.prevPrice)}</span>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(selectedVariation.prevDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', weekday: 'short' })}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Store className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span className="text-xs font-medium text-foreground truncate">{selectedVariation.prevStore}</span>
+                        </div>
+                        <button 
+                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVariation.prevStore)}`, '_blank')}
                           className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                         >
                           <LocateFixed className="w-3.5 h-3.5" />

@@ -15,10 +15,10 @@ import { PurchaseHistory } from '@/types';
 type StatusFilter = 'all' | 'critical' | 'low' | 'ok';
 
 const statusConfig = {
-  critical: { label: 'Crítico', dot: 'bg-destructive', class: 'bg-destructive/10 text-destructive border-destructive/20' },
-  low: { label: 'Baixo', dot: 'bg-warning', class: 'bg-warning/10 text-warning-foreground border-warning/20' },
-  ok: { label: 'OK', dot: 'bg-primary', class: 'bg-accent text-accent-foreground border-primary/20' },
-  expired: { label: 'Vencido', dot: 'bg-muted-foreground', class: 'bg-muted text-muted-foreground border-border' },
+  critical: { label: 'critical', dot: 'bg-destructive', class: 'bg-destructive/10 text-destructive border-destructive/20' },
+  low: { label: 'low', dot: 'bg-warning', class: 'bg-warning/10 text-warning-foreground border-warning/20' },
+  ok: { label: 'ok', dot: 'bg-primary', class: 'bg-accent text-accent-foreground border-primary/20' },
+  expired: { label: 'expired', dot: 'bg-muted-foreground', class: 'bg-muted text-muted-foreground border-border' },
 };
 
 const categoryIcons: Record<string, string> = {
@@ -33,6 +33,7 @@ interface StockPageProps {
 }
 
 export function StockPage({ onBack }: StockPageProps) {
+  const { lang, t } = useLanguage();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [stock, setStock] = useState<StockItem[]>(() => {
@@ -59,7 +60,7 @@ export function StockPage({ onBack }: StockPageProps) {
       quantity: qty,
       price: qty > 0 ? price / qty : price,
       total_price: price,
-      store_name: 'Entrada Manual',
+      store_name: t('manualEntry'),
       purchase_date: today,
     };
     const history = getHistory();
@@ -73,7 +74,7 @@ export function StockPage({ onBack }: StockPageProps) {
     refreshStockStatuses();
     setStock(getStock());
 
-    toast.success('Produto adicionado ao estoque!');
+    toast.success(t('productAddedToStock'));
   };
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export function StockPage({ onBack }: StockPageProps) {
     setStock(prev => prev.map(s => s.id === id ? { ...s, quantity: Math.max(0, s.quantity + delta) } : s));
   };
 
-  const zeroQty = (id: string) => {
+  const zeroQtyFunc = (id: string) => {
     setStock(prev => prev.map(s => s.id === id ? { ...s, quantity: 0 } : s));
   };
 
@@ -101,17 +102,17 @@ export function StockPage({ onBack }: StockPageProps) {
   };
 
   const filters: { id: StatusFilter; label: string; dot?: string }[] = [
-    { id: 'all', label: 'Todos' },
-    { id: 'critical', label: 'Crítico', dot: 'bg-destructive' },
-    { id: 'low', label: 'Baixo', dot: 'bg-warning' },
-    { id: 'ok', label: 'OK', dot: 'bg-primary' },
+    { id: 'all', label: t('all') },
+    { id: 'critical', label: t('critical'), dot: 'bg-destructive' },
+    { id: 'low', label: t('low'), dot: 'bg-warning' },
+    { id: 'ok', label: t('ok'), dot: 'bg-primary' },
   ];
 
   return (
     <div className="pb-20">
       <PageHeader
-        title="Estoque"
-        subtitle={`${stock.length} produtos`}
+        title={t('stockTitle')}
+        subtitle={`${stock.length} ${t('stockItemsCount')}`}
         onBack={onBack}
         action={
           <button onClick={() => setShowAddDialog(true)} className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center shadow-elevated">
@@ -129,7 +130,7 @@ export function StockPage({ onBack }: StockPageProps) {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por produto ou categoria..."
+            placeholder={t('searchStockPlaceholder')}
             className="w-full bg-card rounded-xl border border-border pl-9 pr-3 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 ring-primary/30"
           />
         </div>
@@ -152,7 +153,7 @@ export function StockPage({ onBack }: StockPageProps) {
 
         {/* Swipe hint */}
         <p className="text-[10px] text-muted-foreground text-center">
-          ← Deslize para excluir · Deslize para adicionar ao lembrete →
+          {t('swipeHintStock')}
         </p>
 
         {/* Items */}
@@ -181,10 +182,10 @@ export function StockPage({ onBack }: StockPageProps) {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold text-foreground">{s.product_name}</p>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.class}`}>
-                          {cfg.label}
+                          {t(cfg.label)}
                         </span>
                         <button className="text-xs text-muted-foreground flex items-center gap-0.5">
-                          <Pencil className="w-3 h-3" /> Editar
+                          <Pencil className="w-3 h-3" /> {t('edit')}
                         </button>
                       </div>
                       <div className="flex items-center gap-1.5 mt-1">
@@ -194,15 +195,15 @@ export function StockPage({ onBack }: StockPageProps) {
                         <span className="text-xs text-muted-foreground">{s.quantity} {s.unit}</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        · comprado {sincePurchase !== null ? `${sincePurchase}d` : '—'} atrás
+                        · {t('bought')} {sincePurchase !== null ? `${sincePurchase}d` : '—'} {t('ago')}
                       </p>
                       <p className={`text-[11px] font-medium mt-0.5 ${daysColor}`}>
-                        · ~{daysLeft}d restantes
+                        · ~{daysLeft}d {t('daysLeft')}
                       </p>
                       {s.learned_consumption && (
                         <p className="text-[10px] text-primary mt-0.5 flex items-center gap-1">
                           <Sparkles className="w-3 h-3" />
-                          Consumo aprendido ({s.purchase_count} compras, ~{s.avg_duration_days}d por ciclo)
+                          {t('learnedConsumption')} ({s.purchase_count} {t('purchases')}, ~{s.avg_duration_days}{t('daysPerCycle')})
                         </p>
                       )}
                     </div>
@@ -251,10 +252,10 @@ export function StockPage({ onBack }: StockPageProps) {
                           <Plus className="w-4 h-4 text-primary-foreground" />
                         </button>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">mín: {s.min_quantity} {s.unit}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('minQuantity')}: {s.min_quantity} {s.unit}</p>
                       <div className="flex gap-2">
-                        <button onClick={() => zeroQty(s.id)} className="text-[10px] text-primary font-medium">Zerar</button>
-                        <button onClick={() => deleteItem(s.id)} className="text-[10px] text-destructive font-medium">Excluir</button>
+                        <button onClick={() => zeroQtyFunc(s.id)} className="text-[10px] text-primary font-medium">{t('zeroQty')}</button>
+                        <button onClick={() => deleteItem(s.id)} className="text-[10px] text-destructive font-medium">{t('delete')}</button>
                       </div>
                     </div>
                   </div>

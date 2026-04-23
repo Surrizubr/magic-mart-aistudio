@@ -25,7 +25,7 @@ interface ReportsPageProps {
 }
 
 export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
-  const { formatCurrency: fc } = useLanguage();
+  const { lang, currency, formatCurrency: fc, t } = useLanguage();
   const history = getHistory();
   const currentMonth = history.reduce((sum, h) => sum + h.total_price, 0);
   const [visitsOpen, setVisitsOpen] = useState(false);
@@ -50,7 +50,6 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
   const storeCounts = history.reduce<Record<string, { count: number; lat?: number; lng?: number }>>((acc, h) => {
     const key = h.store_name;
     if (!acc[key]) acc[key] = { count: 0, lat: h.store_lat, lng: h.store_lng };
-    // Count unique dates per store
     return acc;
   }, {});
   // Recount using unique visits
@@ -91,7 +90,8 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
   const categoryData = Object.entries(categoryTotals)
     .sort((a, b) => b[1] - a[1])
     .map(([name, value], i) => ({
-      name, value,
+      name: t(name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '')),
+      value,
       fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
     }));
   const catTotal = categoryData.reduce((s, c) => s + c.value, 0);
@@ -102,21 +102,22 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
 
   const monthlyTotals = history.reduce<Record<string, number>>((acc, h) => {
     const d = new Date(h.purchase_date);
-    const key = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+    const key = d.toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en', { month: 'short' }).replace('.', '');
     acc[key] = (acc[key] || 0) + h.total_price;
     return acc;
   }, {});
-  const monthlySpending = Object.entries(monthlyTotals).map(([month, value]) => ({ month, value }));
+  const monthlySpending = Object.entries(monthlyTotals).map(([month, value]) => ({ month: month.toUpperCase(), value }));
 
   return (
     <div className="pb-20">
       <PageHeader
-        title="Relatórios"
-        subtitle="Análise de consumo"
+        title={t('reportsTitle')}
+        subtitle={t('consumptionAnalysis')}
         onBack={onBack}
         action={
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary text-primary text-xs font-medium">
-            <Calendar className="w-3.5 h-3.5" /> Abr 2026
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary text-primary text-xs font-medium uppercase">
+            <Calendar className="w-3.5 h-3.5" />
+            {new Date().toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en', { month: 'short', year: 'numeric' })}
           </button>
         }
       />
@@ -127,36 +128,36 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           <div className="bg-card rounded-xl border border-border p-4">
             <TrendingUp className="w-5 h-5 text-primary mb-2" />
             <p className="text-xl font-bold text-foreground">{fc(currentMonth)}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Este Mês</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('thisMonth')}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
             <BarChart3 className="w-5 h-5 text-primary mb-2" />
             <p className="text-xl font-bold text-foreground">{fc(currentMonth)}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Média/Mês</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('monthlyAverage')}</p>
           </div>
           <button onClick={() => setVisitsOpen(true)} className="bg-card rounded-xl border border-border p-4 text-left hover:bg-accent/50 transition-colors">
             <ShoppingCart className="w-5 h-5 text-primary mb-2" />
             <p className="text-xl font-bold text-foreground">{totalVisits}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Idas ao Mercado</p>
-            <p className="text-[10px] text-primary font-medium mt-0.5">ver detalhes →</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('marketVisits')}</p>
+            <p className="text-[10px] text-primary font-medium mt-0.5">{t('seeDetails')} →</p>
           </button>
           <div className="bg-card rounded-xl border border-border p-4">
             <Clock className="w-5 h-5 text-muted-foreground mb-2" />
             <p className="text-xl font-bold text-foreground">--</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Inflação Estimada</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('estimatedInflation')}</p>
           </div>
         </div>
 
         {/* Monthly Evolution Bar Chart */}
         {monthlySpending.length > 0 && (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-1">Evolução Mensal</h3>
-            <p className="text-xs text-muted-foreground mb-3">Últimos {monthlySpending.length} meses</p>
+            <h3 className="text-sm font-bold text-foreground mb-1">{t('monthlyEvolution')}</h3>
+            <p className="text-xs text-muted-foreground mb-3">{t('lastMonths')} {monthlySpending.length} {t('months')}</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={monthlySpending}>
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(160,10%,45%)' }} axisLine={true} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: 'hsl(160,10%,45%)' }} axisLine={true} tickLine={false} tickFormatter={(v) => fc(v)} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(v: number) => [fc(v), 'Gasto']} />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(v: number) => [fc(v), t('spending')]} />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="hsl(152, 60%, 42%)" />
               </BarChart>
             </ResponsiveContainer>
@@ -165,14 +166,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
 
         {monthlySpending.length === 0 && (
           <div className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className="text-sm text-muted-foreground">Sem dados de compras para exibir evolução mensal.</p>
+            <p className="text-sm text-muted-foreground">{t('noSpendingData')}</p>
           </div>
         )}
 
         {/* Donut Chart */}
         {enrichedCategories.length > 0 ? (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-4">Gastos por Categoria</h3>
+            <h3 className="text-sm font-bold text-foreground mb-4">{t('spendingByCategory')}</h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={enrichedCategories} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2} dataKey="value">
@@ -200,14 +201,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           </div>
         ) : (
           <div className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className="text-sm text-muted-foreground">Sem dados de categorias para exibir.</p>
+            <p className="text-sm text-muted-foreground">{t('noCategoryData')}</p>
           </div>
         )}
 
         {/* Top Products */}
         {topProducts.length > 0 ? (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">Mais Comprados</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3">{t('mostBought')}</h3>
             <div className="max-h-60 overflow-y-auto pr-2 scrollbar-thin">
               {topProducts.map(([name, count], i) => (
                 <div key={name} className="flex items-center justify-between py-2.5 border-b border-border/50 last:border-0">
@@ -222,14 +223,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           </div>
         ) : (
           <div className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className="text-sm text-muted-foreground">Sem produtos no histórico.</p>
+            <p className="text-sm text-muted-foreground">{t('noHistoryProducts')}</p>
           </div>
         )}
 
         {/* Most Visited Stores */}
         {topStores.length > 0 && (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">Locais Mais Visitados</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3">{t('mostVisitedStores')}</h3>
             <div className="max-h-60 overflow-y-auto pr-2 scrollbar-thin">
               {topStores.map(([name, data], i) => (
                 <div key={name} className="flex items-center justify-between py-2.5 border-b border-border/50 last:border-0">
@@ -237,13 +238,13 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                     <span className="text-xs font-bold text-primary bg-accent w-6 h-6 rounded flex items-center justify-center">{i + 1}</span>
                     <div>
                       <span className="text-sm font-medium text-foreground">{name}</span>
-                      <p className="text-[10px] text-muted-foreground">{data.count} {data.count === 1 ? 'visita' : 'visitas'}</p>
+                      <p className="text-[10px] text-muted-foreground">{data.count} {data.count === 1 ? t('visit') : t('visits')}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => openMaps(name, data.lat, data.lng)}
                     className="p-2 rounded-lg hover:bg-accent/50 transition-colors"
-                    title="Abrir no Google Maps"
+                    title={t('openInGoogleMaps')}
                   >
                     <ExternalLink className="w-4 h-4 text-primary" />
                   </button>
@@ -260,7 +261,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-primary" />
-              Idas ao Mercado ({totalVisits})
+              {t('marketVisits')} ({totalVisits})
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-1">
@@ -269,7 +270,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 <div>
                   <p className="text-sm font-medium text-foreground">{v.store_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(v.purchase_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {new Date(v.purchase_date).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
                 <button
@@ -281,7 +282,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
               </div>
             ))}
             {visitEntries.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma visita registrada.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('noVisitRegistered')}</p>
             )}
           </div>
         </DialogContent>

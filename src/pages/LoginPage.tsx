@@ -37,7 +37,7 @@ export function LoginPage() {
         );
 
         if (!popup) {
-          toast.error('O bloqueador de popups impediu o login. Por favor, autorize popups.');
+          toast.error(t('popupBlockedError'));
           return;
         }
 
@@ -49,7 +49,7 @@ export function LoginPage() {
               console.log('[Login] Popup closed, checking session...');
               const { data: sessionData } = await supabase.auth.getSession();
               if (sessionData.session) {
-                toast.success('Login realizado com sucesso!');
+                toast.success(t('loginSuccessToast'));
                 // O useAuth detectará a mudança de estado automaticamente
               }
             }
@@ -60,7 +60,7 @@ export function LoginPage() {
       }
     } catch (err: any) {
       console.error('[Login] Error:', err);
-      toast.error(err.message || 'Erro ao iniciar login');
+      toast.error(err.message || t('loginError'));
     }
   };
 
@@ -76,7 +76,7 @@ export function LoginPage() {
             <span className="text-3xl">🌿</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">Magicmart AI</h1>
-          <p className="text-sm text-muted-foreground">{t('appTagline') || 'Sua despensa inteligente'}</p>
+          <p className="text-sm text-muted-foreground">{t('appTagline')}</p>
         </div>
 
         <button
@@ -93,13 +93,13 @@ export function LoginPage() {
         </button>
 
         <p className="text-center text-[10px] text-muted-foreground/70 mt-4">
-          Ao continuar, você concorda com nossos{' '}
+          {t('termsDisclaimer')}{' '}
           <a href="https://www.idapps.com.br/terms" target="_blank" rel="noopener noreferrer" className="underline">
-            Termos de Uso
+            {t('termsOfUse')}
           </a>{' '}
-          e{' '}
+          {t('and')}{' '}
           <a href="https://www.idapps.com.br/privacy" target="_blank" rel="noopener noreferrer" className="underline">
-            Política de Privacidade
+            {t('privacyPolicy')}
           </a>
         </p>
       </motion.div>

@@ -491,8 +491,8 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
                 {t('getApiKeyHowTo')}
               </p>
               <ol className="text-xs text-muted-foreground space-y-1.5 pl-4 list-decimal">
-                <li>Acesse <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="font-mono text-primary underline">https://aistudio.google.com/apikey</a></li>
                 <li>{t('loginToGoogle')}</li>
+                <li>Acesse <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="font-mono text-primary underline">https://aistudio.google.com/apikey</a></li>
                 <li>{t('clickCreateKey')}</li>
                 <li>{t('copyKey')}</li>
                 <li>

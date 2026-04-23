@@ -16,7 +16,7 @@ interface ListDetailPageProps {
 }
 
 export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }: ListDetailPageProps) {
-  const { currency, formatCurrency: fc } = useLanguage();
+  const { lang, currency, formatCurrency: fc, t } = useLanguage();
   const [items, setItems] = useState<ShoppingListItem[]>(list.items);
   const [showAddItem, setShowAddItem] = useState(false);
   const [newProduct, setNewProduct] = useState('');
@@ -52,7 +52,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
 
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(i => i.id !== id));
-    toast.success('Item removido.');
+    toast.success(t('itemRemovedToast'));
   };
 
   const addItem = () => {
@@ -61,7 +61,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
       id: Date.now().toString(),
       list_id: list.id,
       product_name: newProduct.trim(),
-      category: 'Geral',
+      category: t('general'),
       quantity: parseFloat(newQty) || 1,
       unit: newUnit,
       estimated_price: parseFloat(newPrice) || 0,
@@ -85,13 +85,13 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
       status: 'shopping',
     };
     onUpdateList(updatedList);
-    toast.info('Selecione os itens comprados e clique em "Encerrar Compras".');
+    toast.info(t('selectItemsInfo'));
   };
 
   const handleEncerrarClick = () => {
     const checkedItems = items.filter(i => i.is_checked);
     if (checkedItems.length === 0) {
-      toast.warning('Selecione pelo menos um item antes de encerrar.');
+      toast.warning(t('selectAtLeastOneWarning'));
       return;
     }
     setShowStoreDialog(true);
@@ -104,7 +104,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
-            { headers: { 'Accept-Language': 'pt-BR' } }
+            { headers: { 'Accept-Language': lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR' } }
           );
           const data = await res.json();
           const addr = data.address || {};
@@ -117,16 +117,16 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
           if (number) name += ', ' + number;
           if (!name.trim()) name = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
           setStoreName(name.trim());
-          toast.success('Localização obtida!');
+          toast.success(t('locationObtainedToast'));
         } catch {
           setStoreName(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
-          toast.info('Coordenadas salvas (sem acesso à internet para nome da rua).');
+          toast.info(t('coordsSavedToast'));
         }
         setGeoLoading(false);
       },
       () => {
         setGeoLoading(false);
-        toast.error('Não foi possível obter localização.');
+        toast.error(t('locationErrorToast'));
       },
       { enableHighAccuracy: true }
     );
@@ -134,7 +134,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
 
   const confirmEncerrar = () => {
     if (!storeName.trim()) {
-      toast.error('Informe o local de compras.');
+      toast.error(t('enterStoreLocationError'));
       return;
     }
     const checkedItems = items.filter(i => i.is_checked);
@@ -153,7 +153,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
         status: 'completed',
       };
       onUpdateList(updatedList);
-      toast.success('Compras encerradas! Lista concluída.');
+      toast.success(t('shoppingFinishedSuccess'));
       onBack();
     } else {
       const resetItems = uncheckedItems.map(i => ({ ...i, is_checked: false }));
@@ -166,7 +166,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
       };
       setItems(resetItems);
       onUpdateList(updatedList);
-      toast.success(`${checkedItems.length} item(ns) adicionado(s) ao estoque. ${uncheckedItems.length} item(ns) permanecem na lista.`);
+      toast.success(`${checkedItems.length} ${t('itemsAddedToStock')} ${uncheckedItems.length} ${t('itemsRemainInList')}`);
     }
   };
 
@@ -176,14 +176,14 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
     <div className="pb-20">
       <PageHeader
         title={list.name}
-        subtitle={shoppingMode ? `${checkedCount}/${items.length} selecionados` : `${items.length} itens`}
+        subtitle={shoppingMode ? `${checkedCount}/${items.length} ${t('selected')}` : `${items.length} ${t('stockItemsCount')}`}
         onBack={onBack}
       />
 
       <div className="p-4 space-y-3">
         {/* Add item button - always visible */}
         <Button size="sm" onClick={() => setShowAddItem(true)} className="gradient-primary text-primary-foreground border-0 w-full">
-          <Plus className="w-4 h-4 mr-1" /> Adicionar Item
+          <Plus className="w-4 h-4 mr-1" /> {t('addItemBtn')}
         </Button>
 
         {/* Add item form */}
@@ -199,7 +199,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                 <input
                   value={newProduct}
                   onChange={e => setNewProduct(e.target.value)}
-                  placeholder="Nome do produto..."
+                  placeholder={t('productNamePlaceholder')}
                   className="w-full bg-secondary rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 ring-primary/30"
                   autoFocus
                   onKeyDown={e => e.key === 'Enter' && addItem()}
@@ -208,7 +208,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                   <input
                     value={newQty}
                     onChange={e => setNewQty(e.target.value)}
-                    placeholder="Qtd"
+                    placeholder={t('qty')}
                     type="number"
                     className="w-16 bg-secondary rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:ring-2 ring-primary/30"
                   />
@@ -226,15 +226,15 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                   <input
                     value={newPrice}
                     onChange={e => setNewPrice(e.target.value)}
-                    placeholder="Preço"
+                    placeholder={t('price')}
                     type="number"
                     step="0.01"
                     className="w-24 bg-secondary rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:ring-2 ring-primary/30"
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={addItem} className="gradient-primary text-primary-foreground border-0">Adicionar</Button>
-                  <Button size="sm" variant="ghost" onClick={() => setShowAddItem(false)}>Cancelar</Button>
+                  <Button size="sm" onClick={addItem} className="gradient-primary text-primary-foreground border-0">{t('add')}</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowAddItem(false)}>{t('cancel')}</Button>
                 </div>
               </div>
             </motion.div>
@@ -274,7 +274,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                     {item.estimated_price > 0 && ` · ${fc(item.estimated_price)}`}
                   </p>
                 </div>
-                <span className="text-xs text-muted-foreground mr-1">{item.category}</span>
+                <span className="text-xs text-muted-foreground mr-1">{t(item.category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '')) || item.category}</span>
                 <button
                   onClick={e => { e.stopPropagation(); removeItem(item.id); }}
                   className="shrink-0 w-7 h-7 rounded-full bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors"
@@ -286,7 +286,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
           </AnimatePresence>
 
           {items.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-8">Lista vazia. Adicione itens acima.</p>
+            <p className="text-center text-sm text-muted-foreground py-8">{t('emptyListMsg')}</p>
           )}
         </div>
 
@@ -297,7 +297,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
             className="w-full gradient-primary text-primary-foreground border-0 h-12 text-base font-semibold"
           >
             <ShoppingCart className="w-5 h-5 mr-2" />
-            Concluir Lista ({items.length} item{items.length !== 1 ? 's' : ''})
+            {t('finishListBtn')} ({items.length} item{items.length !== 1 ? 's' : ''})
           </Button>
         )}
 
@@ -305,14 +305,14 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
         {shoppingMode && (
           <div className="space-y-2">
             <p className="text-xs text-center text-muted-foreground">
-              ⚠️ Ao encerrar, os itens selecionados serão transferidos para o estoque.
+              {t('transferToStockHint')}
             </p>
             <Button
               onClick={handleEncerrarClick}
               className="w-full bg-amber-600 hover:bg-amber-700 text-primary-foreground border-0 h-12 text-base font-semibold"
             >
               <CheckCircle className="w-5 h-5 mr-2" />
-              Encerrar Compras ({checkedCount}/{items.length})
+              {t('endShoppingBtn')} ({checkedCount}/{items.length})
             </Button>
           </div>
         )}
@@ -334,12 +334,12 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                 onClick={e => e.stopPropagation()}
                 className="bg-card rounded-xl border border-border p-5 w-full max-w-sm space-y-4 shadow-xl"
               >
-                <h3 className="text-base font-bold text-card-foreground">Local de Compras</h3>
-                <p className="text-xs text-muted-foreground">Informe onde você fez as compras:</p>
+                <h3 className="text-base font-bold text-card-foreground">{t('shoppingLocationTitle')}</h3>
+                <p className="text-xs text-muted-foreground">{t('informLocationHint')}</p>
                 <input
                   value={storeName}
                   onChange={e => setStoreName(e.target.value)}
-                  placeholder="Ex: Supermercado Extra"
+                  placeholder={t('storeNamePlaceholder')}
                   className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:ring-2 ring-primary/30"
                   autoFocus
                 />
@@ -349,14 +349,14 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium w-full justify-center"
                 >
                   {geoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-                  {geoLoading ? 'Obtendo endereço...' : 'Usar minha localização'}
+                  {geoLoading ? t('gettingAddress') : t('useMyLocationBtn')}
                 </button>
                 <div className="flex gap-2 pt-1">
                   <Button onClick={confirmEncerrar} className="flex-1 gradient-primary text-primary-foreground border-0">
-                    Confirmar
+                    {t('confirm')}
                   </Button>
                   <Button variant="ghost" onClick={() => setShowStoreDialog(false)} className="flex-1">
-                    Cancelar
+                    {t('cancel')}
                   </Button>
                 </div>
               </motion.div>

@@ -45,11 +45,11 @@ export function PricingPage() {
 
           <div className="space-y-2">
             {[
-              t('pricingFeature1') || 'Scanner de cupons com IA',
-              t('pricingFeature2') || 'Controle de estoque inteligente',
-              t('pricingFeature3') || 'Relatórios de economia',
-              t('pricingFeature4') || 'Listas de compras ilimitadas',
-              t('pricingFeature5') || '30 dias para cancelar e reembolso',
+              t('pricingFeature1'),
+              t('pricingFeature2'),
+              t('pricingFeature3'),
+              t('pricingFeature4'),
+              t('pricingFeature5'),
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-primary shrink-0" />
@@ -66,7 +66,7 @@ export function PricingPage() {
             {(loading || checkoutLoading) ? (
               <>
                 <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                {t('processing') || 'Processando...'}
+                {t('processing')}
               </>
             ) : (
               t('premiumSubscribe')

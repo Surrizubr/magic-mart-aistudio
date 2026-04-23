@@ -12,10 +12,10 @@ interface SharePageProps {
   onBack?: () => void;
 }
 
-function formatListForWhatsApp(list: ShoppingList, currency: string, fc: (v: number) => string): string {
+function formatListForWhatsApp(list: ShoppingList, currency: string, fc: (v: number) => string, t: (k: string) => string): string {
   let text = `🛒 *${list.name}*\n\n`;
   if (list.items.length === 0) {
-    text += '(lista vazia)\n';
+    text += `(${t('emptyListMsg')})\n`;
   } else {
     list.items.forEach((item, i) => {
       const checked = item.is_checked ? '✅' : '⬜';
@@ -25,14 +25,14 @@ function formatListForWhatsApp(list: ShoppingList, currency: string, fc: (v: num
   }
   const total = list.items.reduce((s, it) => s + it.estimated_price * it.quantity, 0);
   if (total > 0) {
-    text += `\n💰 *Total estimado: ${fc(total)}*`;
+    text += `\n💰 *${t('totalEstimated')}: ${fc(total)}*`;
   }
-  text += '\n\n_Enviado via Magicmart AI 🌿_';
+  text += `\n\n_${t('sentViaApp')} 🌿_`;
   return text;
 }
 
 export function SharePage({ onBack }: SharePageProps) {
-  const { currency, formatCurrency: fc } = useLanguage();
+  const { currency, formatCurrency: fc, t } = useLanguage();
   const lists = getLists().filter(l => l.status === 'active' || l.status === 'shopping');
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -43,10 +43,10 @@ export function SharePage({ onBack }: SharePageProps) {
   const shareViaWhatsApp = () => {
     const listsToShare = lists.filter(l => selected.includes(l.id));
     if (listsToShare.length === 0) {
-      toast.error('Selecione pelo menos uma lista');
+      toast.error(t('selectAtLeastOneListWarning'));
       return;
     }
-    const text = listsToShare.map(l => formatListForWhatsApp(l, currency, fc)).join('\n\n---\n\n');
+    const text = listsToShare.map(l => formatListForWhatsApp(l, currency, fc, t)).join('\n\n---\n\n');
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
@@ -54,8 +54,8 @@ export function SharePage({ onBack }: SharePageProps) {
   return (
     <div className="pb-20">
       <PageHeader
-        title="Compartilhar"
-        subtitle="Envie listas via WhatsApp"
+        title={t('shareTitle')}
+        subtitle={t('sendViaWhatsApp')}
         onBack={onBack}
       />
 
@@ -63,11 +63,11 @@ export function SharePage({ onBack }: SharePageProps) {
         {lists.length === 0 ? (
           <div className="bg-card rounded-xl border border-border p-8 text-center space-y-3">
             <Share2 className="w-10 h-10 text-muted-foreground mx-auto" />
-            <p className="text-sm text-muted-foreground">Nenhuma lista ativa para compartilhar.</p>
+            <p className="text-sm text-muted-foreground">{t('noListsToShare')}</p>
           </div>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground">Selecione as listas que deseja compartilhar:</p>
+            <p className="text-sm text-muted-foreground">{t('selectListsToShareHint')}:</p>
             <div className="space-y-2">
               {lists.map(l => {
                 const isSelected = selected.includes(l.id);
@@ -88,7 +88,7 @@ export function SharePage({ onBack }: SharePageProps) {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-bold text-foreground">{l.name}</p>
-                      <p className="text-xs text-muted-foreground">{l.items.length} itens · {fc(l.estimated_total)}</p>
+                      <p className="text-xs text-muted-foreground">{l.items.length} {t('stockItemsCount')} · {fc(l.estimated_total)}</p>
                     </div>
                   </button>
                 );
@@ -101,7 +101,7 @@ export function SharePage({ onBack }: SharePageProps) {
               className="w-full gradient-primary text-primary-foreground border-0 h-12 text-sm font-bold gap-2"
             >
               <MessageCircle className="w-5 h-5" />
-              Enviar via WhatsApp ({selected.length})
+              {t('sendViaWhatsAppBtn')} ({selected.length})
             </Button>
           </>
         )}

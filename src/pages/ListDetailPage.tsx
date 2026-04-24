@@ -183,7 +183,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
       <div className="p-4 space-y-3">
         {/* Add item button - always visible */}
         <Button size="sm" onClick={() => setShowAddItem(true)} className="gradient-primary text-primary-foreground border-0 w-full">
-          <Plus className="w-4 h-4 mr-1" /> {t('addItemBtn')}
+          <Plus className="w-4 h-4 mr-1" /> {t('addItem')}
         </Button>
 
         {/* Add item form */}
@@ -297,7 +297,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
             className="w-full gradient-primary text-primary-foreground border-0 h-12 text-base font-semibold"
           >
             <ShoppingCart className="w-5 h-5 mr-2" />
-            {t('newList')} ({items.length} {t('items').toLowerCase()})
+            {t('finishList')} ({items.length} {t('items').toLowerCase()})
           </Button>
         )}
 
@@ -312,7 +312,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
               className="w-full bg-amber-600 hover:bg-amber-700 text-primary-foreground border-0 h-12 text-base font-semibold"
             >
               <CheckCircle className="w-5 h-5 mr-2" />
-              {t('shoppingEnded').split('!')[0]} ({checkedCount}/{items.length})
+              {t('endShopping')} ({checkedCount}/{items.length})
             </Button>
           </div>
         )}

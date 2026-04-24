@@ -7,7 +7,7 @@ import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 
 export function PricingPage() {
   const { t, currency } = useLanguage();
-  const { openCheckout, loading: checkoutLoading } = useSubscriptionContext();
+  const { openCheckout, loading: checkoutLoading, status, loading: subLoading } = useSubscriptionContext();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -19,6 +19,8 @@ export function PricingPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  const showSubscribeButton = !subLoading && status === 'inactive';
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
@@ -33,23 +35,23 @@ export function PricingPage() {
           </div>
           <h1 className="text-2xl font-bold text-foreground">{t('subBannerTitle')}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('pricingDesc') || 'Gerencie compras, estoque e gastos com inteligência artificial.'}
+            {t('pricingDesc')}
           </p>
         </div>
 
-        <div className="bg-card rounded-2xl border border-primary/30 p-6 space-y-4 shadow-lg">
-          <div className="text-center">
+        <div className="bg-card rounded-2xl border border-primary/30 p-6 space-y-4 shadow-lg text-center">
+          <div>
             <p className="text-3xl font-bold text-foreground">{currency} 49,90</p>
             <p className="text-sm text-muted-foreground">{t('premiumPerYear')}</p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 text-left">
             {[
-              t('pricingFeature1') || 'Scanner de cupons com IA',
-              t('pricingFeature2') || 'Controle de estoque inteligente',
-              t('pricingFeature3') || 'Relatórios de economia',
-              t('pricingFeature4') || 'Listas de compras ilimitadas',
-              t('pricingFeature5') || '30 dias para cancelar e reembolso',
+              t('pricingFeature1'),
+              t('pricingFeature2'),
+              t('pricingFeature3'),
+              t('pricingFeature4'),
+              t('pricingFeature5'),
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-primary shrink-0" />
@@ -58,21 +60,29 @@ export function PricingPage() {
             ))}
           </div>
 
-          <button
-            onClick={handleCheckout}
-            disabled={loading || checkoutLoading}
-            className="w-full p-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {(loading || checkoutLoading) ? (
-              <>
-                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                {t('processing') || 'Processando...'}
-              </>
-            ) : (
-              t('premiumSubscribe')
-            )}
-          </button>
+          {showSubscribeButton && (
+            <button
+              onClick={handleCheckout}
+              disabled={loading || checkoutLoading}
+              className="w-full mt-4 p-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {(loading || checkoutLoading) ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  {t('processing')}
+                </>
+              ) : (
+                t('premiumSubscribe')
+              )}
+            </button>
+          )}
 
+          {!showSubscribeButton && subLoading && (
+            <div className="w-full mt-4 p-3 flex items-center justify-center gap-2 text-muted-foreground text-sm">
+              <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+              {t('checkingSubscription')}
+            </div>
+          )}
         </div>
 
         <button

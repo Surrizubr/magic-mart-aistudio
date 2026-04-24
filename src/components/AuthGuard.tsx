@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useDevMode } from '@/contexts/DevModeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { LoginPage } from '@/pages/LoginPage';
 import { PricingPage } from '@/pages/PricingPage';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -14,30 +15,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading: authLoading } = useAuth();
   const { status, loading: subLoading } = useSubscription();
   const { devMode } = useDevMode();
+  const { t } = useLanguage();
   
-  const [timedOut, setTimedOut] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    if (user && subLoading && !devMode && !timedOut) {
-      const start = Date.now();
-      const interval = setInterval(() => {
-        const elapsed = Date.now() - start;
-        const p = Math.min((elapsed / 3000) * 100, 98);
-        setProgress(p);
-        if (elapsed >= 3000) {
-          setTimedOut(true);
-          setProgress(100);
-          clearInterval(interval);
-        }
-      }, 50);
-      return () => clearInterval(interval);
-    }
-  }, [user, subLoading, devMode, timedOut]);
-
   // 1. Initial Auth Loading
   if (authLoading) {
-    return <SplashScreen progress={30} />;
+    return <SplashScreen progress={30} message={t('loadingApp')} />;
   }
 
   // 2. Not Logged In
@@ -45,22 +27,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return <LoginPage />;
   }
 
-  // 3. Subscription Loading (with 3s timeout)
-  if (subLoading && !devMode && !timedOut) {
-    return <SplashScreen progress={progress} />;
+  // 3. Subscription Check Finished (Redirect ONLY if confirmed inactive)
+  // We prioritize entering the app directly (children).
+  // If subLoading is finished and status is not active/expiring, we redirect.
+  if (!subLoading && !devMode && status !== 'active' && status !== 'expiring') {
+    return <PricingPage />;
   }
 
-  // 4. Subscription Check Finished (or Timed Out)
-  // If still loading but timed out, we allow entry. 
-  // If NOT loading, we check the actual status.
-  if (!subLoading || devMode) {
-    if (status !== 'active' && status !== 'expiring' && !devMode) {
-      return <PricingPage />;
-    }
-  }
-
-  // If we are here, either:
-  // - subLoading is false and status is OK
-  // - subLoading is true but timedOut is true (background check continues)
+  // Still loading or status is OK or in devMode
   return <>{children}</>;
 }

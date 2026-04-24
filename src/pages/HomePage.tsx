@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { getStock, getLists, getHistory } from '@/data/mockData';
-import { Plus, ShoppingCart, ScanLine, Share2, Calendar, AlertTriangle, ArrowRight, ChevronRight, ListChecks, Settings, Trash2, Archive } from 'lucide-react';
+import { Plus, ShoppingCart, ScanLine, Share2, Calendar, AlertTriangle, ArrowRight, ChevronRight, ListChecks, Settings, Trash2, Archive, ListTodo } from 'lucide-react';
 import { useState } from 'react';
 import { TabId, ShoppingList, StockItem } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -126,7 +126,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             onClick={() => onNavigate('lists')}
             className="col-span-2 bg-white border border-border rounded-xl p-4 text-left"
           >
-            <Plus className="w-6 h-6 text-foreground mb-4" />
+            <ListTodo className="w-6 h-6 text-green-600 mb-4" />
             <p className="text-sm font-bold text-foreground">{t('newList')}</p>
             <p className="text-xs text-muted-foreground">{t('createList')}</p>
           </button>

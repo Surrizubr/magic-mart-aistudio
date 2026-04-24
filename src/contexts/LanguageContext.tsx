@@ -361,6 +361,8 @@ const translations: Record<string, Record<Lang, string>> = {
   noListsFound: { pt: 'Nenhuma lista encontrada', en: 'No lists found', es: 'No se encontraron listas' },
   inShopping: { pt: 'Em compras', en: 'Shopping', es: 'En compras' },
   listRestored: { pt: 'Lista restaurada.', en: 'List restored.', es: 'Lista restaurada.' },
+  listDeleted: { pt: 'Lista excluída.', en: 'List deleted.', es: 'Lista eliminada.' },
+  listArchived: { pt: 'Lista arquivada.', en: 'List archived.', es: 'Lista archivada.' },
   itemRemoved: { pt: 'Item removido', en: 'Item removed', es: 'Ítem eliminado' },
   finishShoppingPrompt: { pt: 'Ao clicar em Encerrar, os itens selecionados serão adicionados ao estoque', en: 'When clicking End, the selected items will be added to stock', es: 'Al hacer clic en Terminar, los ítems seleccionados se añadirán al stock' },
   shoppingEnded: { pt: 'Compras encerradas!', en: 'Shopping ended!', es: '¡Compras terminadas!' },

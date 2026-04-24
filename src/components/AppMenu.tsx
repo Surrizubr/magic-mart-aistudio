@@ -77,8 +77,8 @@ export function AppMenu({ open, onClose, initialSubMenu, onNavigate }: AppMenuPr
       const ai = new GoogleGenAI({ apiKey: keyToTest });
       
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [{ role: 'user', parts: [{ text: t('testPrompt') }] }]
+        model: "gemini-3-flash-preview",
+        contents: t('testPrompt')
       });
       const text = response.text || '';
 

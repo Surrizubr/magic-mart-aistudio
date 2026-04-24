@@ -60,11 +60,12 @@ export async function analyzeWithGemini(images: string[], prompt: string, provid
     } : undefined;
 
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: [{ role: 'user', parts: [{ text: prompt }, ...imageParts] }],
+      model: "gemini-3-flash-preview",
+      contents: { parts: [{ text: prompt }, ...imageParts] },
       config: {
         responseMimeType: "application/json",
         responseSchema,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
       }
     });
 

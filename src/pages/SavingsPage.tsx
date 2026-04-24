@@ -12,10 +12,9 @@ const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 function getLevelColor(level: number) {
   switch (level) {
     case 1: return 'bg-destructive/60';
-    case 2: return 'bg-orange-500';    // Caro = Orange
-    case 3: return 'bg-primary/20';    // Normal = Empty
-    case 4: return 'bg-primary/40';    // Barato
-    case 5: return 'bg-primary/80';    // Muito Barato
+    case 2: return 'bg-primary/20'; // Caro = Normal = Empty
+    case 3: return 'bg-primary/40'; // Barato
+    case 4: return 'bg-primary/80'; // Muito Barato
     default: return 'bg-primary/20';
   }
 }
@@ -296,7 +295,7 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
             <span className="text-xs text-muted-foreground">Normal</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-orange-500" />
+            <div className="w-4 h-4 rounded bg-primary/20" />
             <span className="text-xs text-muted-foreground">Caro</span>
           </div>
           <div className="flex items-center gap-1.5">

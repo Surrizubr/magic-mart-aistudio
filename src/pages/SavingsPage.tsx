@@ -13,15 +13,15 @@ function getLevelColor(level: number) {
   switch (level) {
     case 0: return 'bg-primary/20';
     case 1: return 'bg-destructive/60';
-    case 2: return 'bg-warning/60';
-    case 3: return 'bg-primary/40';
+    case 2: return 'bg-warning';      // Caro
+    case 3: return 'bg-primary/40';    // Barato
     default: return 'bg-primary/20';
   }
 }
 
 function getWeekColor(val: number) {
   if (val === 0) return 'bg-primary/30';
-  return 'bg-warning';
+  return 'bg-primary/20'; // Normal color
 }
 
 interface StoreInfo {
@@ -291,11 +291,11 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
             <span className="text-xs text-muted-foreground">Barato</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-warning" />
+            <div className="w-4 h-4 rounded bg-primary/20" />
             <span className="text-xs text-muted-foreground">Normal</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-destructive/40" />
+            <div className="w-4 h-4 rounded bg-warning" />
             <span className="text-xs text-muted-foreground">Caro</span>
           </div>
           <div className="flex items-center gap-1.5">

@@ -46,7 +46,7 @@ interface ScannerPageProps {
 }
 
 export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: ScannerPageProps) {
-  const { currency, formatCurrency: fc, t } = useLanguage();
+  const { lang, currency, formatCurrency: fc, t } = useLanguage();
   const [mode, setMode] = useState<ScanMode>('choose');
   const [step, setStep] = useState<ScanStep>('capture');
   const [images, setImages] = useState<string[]>([]);
@@ -539,7 +539,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-card-foreground truncate">{receipt.store_name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(receipt.date + 'T12:00:00').toLocaleDateString(lang === 'english' ? 'en-US' : lang === 'spanish' ? 'es-ES' : 'pt-BR')}
+                      {new Date(receipt.date + 'T12:00:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR')}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {receipt.items.length} {receipt.items.length === 1 ? t('historyItemCount') : t('historyItemsCount')} — {fc(receipt.total)}

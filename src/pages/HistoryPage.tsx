@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
 import { getHistory, saveHistory, getLists, saveLists } from '@/data/mockData';
-import { MapPin, ScanLine, Clock, Pencil, LocateFixed, AlertTriangle, Trash2, ListPlus, TrendingUp, TrendingDown } from 'lucide-react';
+import { MapPin, ScanLine, Clock, Pencil, LocateFixed, AlertTriangle, Trash2, ListPlus, TrendingUp, TrendingDown, FileDown, FileUp } from 'lucide-react';
 import { SwipeableRow } from '@/components/SwipeableRow';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -76,6 +76,13 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
   const [editAddress, setEditAddress] = useState('');
   const [editDate, setEditDate] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
+  
+  // Export states
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportRange, setExportRange] = useState({ 
+    start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 10),
+    end: new Date().toISOString().slice(0, 10) 
+  });
 
   const handleDeleteItem = (itemId: string) => {
     const allHistory = getHistory();
@@ -188,6 +195,112 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     }
   };
 
+  const handleExportCSV = () => {
+    const all = getHistory();
+    const filtered = all.filter(h => h.purchase_date >= exportRange.start && h.purchase_date <= exportRange.end);
+    
+    if (filtered.length === 0) {
+      toast.error('Nenhum dado encontrado no período selecionado.');
+      return;
+    }
+
+    const headers = ['Data', 'Estabelecimento', 'Produto', 'Categoria', 'Quantidade', 'Preço Unitário', 'Total'];
+    const csvContent = [
+      headers.join(','),
+      ...filtered.map(h => [
+        h.purchase_date,
+        `"${h.store_name.replace(/"/g, '""')}"`,
+        `"${h.product_name.replace(/"/g, '""')}"`,
+        `"${h.category.replace(/"/g, '""')}"`,
+        h.quantity,
+        h.price,
+        h.total_price
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `magic-mart-historico-${exportRange.start}-a-${exportRange.end}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowExportModal(false);
+    toast.success(`${filtered.length} itens exportados com sucesso.`);
+  };
+
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) throw new Error('Arquivo vazio ou inválido');
+
+        const all = getHistory();
+        let importedCount = 0;
+        let skippedCount = 0;
+
+        // Simple CSV parser that handles basic quotes
+        for (let i = 1; i < lines.length; i++) {
+          // regex to split by comma but ignore commas inside quotes
+          const cols = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+          const cleanCols = cols.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"'));
+
+          if (cleanCols.length < 7) continue;
+
+          const [date, store, product, category, qty, price, total] = cleanCols;
+
+          // Deduplication check
+          const exists = all.some(h => 
+            h.purchase_date === date && 
+            h.store_name === store && 
+            h.product_name === product && 
+            Math.abs(h.total_price - parseFloat(total)) < 0.01
+          );
+
+          if (!exists) {
+            all.push({
+              id: crypto.randomUUID(),
+              purchase_date: date,
+              store_name: store,
+              product_name: product,
+              category: category,
+              quantity: parseFloat(qty),
+              price: parseFloat(price),
+              total_price: parseFloat(total),
+              scanned: false
+            });
+            importedCount++;
+          } else {
+            skippedCount++;
+          }
+        }
+
+        if (importedCount > 0) {
+          saveHistory(all);
+          setHistoryData(all);
+          toast.success(`${importedCount} itens importados.${skippedCount > 0 ? ` (${skippedCount} duplicados ignorados)` : ''}`);
+          setTimeout(() => window.location.reload(), 1000);
+        } else if (skippedCount > 0) {
+          toast.info('Todos os itens já existem no histórico.');
+        } else {
+          toast.error('Nenhum dado válido encontrado para importar.');
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error('Erro ao processar arquivo CSV. Verifique o formato.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
+  };
+
   return (
     <div className="pb-20">
       <PageHeader
@@ -202,9 +315,36 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-4 space-y-4">
         {/* Scanner button */}
         {onNavigateToScanner && (
-          <Button onClick={onNavigateToScanner} className="w-full gradient-primary text-primary-foreground border-0 h-10">
-            <ScanLine className="w-4 h-4 mr-2" /> {t('scanReceiptBtn')}
-          </Button>
+          <div className="space-y-3">
+            <Button onClick={onNavigateToScanner} className="w-full gradient-primary text-primary-foreground border-0 h-11 shadow-md">
+              <ScanLine className="w-5 h-5 mr-2" /> {t('scanReceiptBtn')}
+            </Button>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => document.getElementById('csv-import-input')?.click()}
+                className="h-10 bg-card border-border hover:bg-accent transition-colors"
+              >
+                <FileUp className="w-4 h-4 mr-2 text-primary" /> {t('import') || 'Importar'}
+              </Button>
+              <input 
+                id="csv-import-input" 
+                type="file" 
+                accept=".csv" 
+                className="hidden" 
+                onChange={handleImportCSV}
+              />
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setShowExportModal(true)}
+                className="h-10 bg-card border-border hover:bg-accent transition-colors"
+              >
+                <FileDown className="w-4 h-4 mr-2 text-primary" /> {t('export') || 'Exportar'}
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Total */}
@@ -383,6 +523,44 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingStore(null)}>{t('cancelBtn')}</Button>
             <Button onClick={handleSaveAddress}>{t('save')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <DialogContent className="max-w-[90vw] rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">Exportar Histórico (CSV)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase">Data de Início</label>
+              <Input
+                type="date"
+                value={exportRange.start}
+                onChange={(e) => setExportRange(prev => ({ ...prev, start: e.target.value }))}
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase">Data de Fim</label>
+              <Input
+                type="date"
+                value={exportRange.end}
+                onChange={(e) => setExportRange(prev => ({ ...prev, end: e.target.value }))}
+                className="text-sm"
+              />
+            </div>
+            <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
+              <p className="text-[10px] text-primary leading-tight">
+                O arquivo exportado pode ser aberto no Excel, Google Sheets ou importado de volta para este ou outro dispositivo.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowExportModal(false)}>{t('cancelBtn')}</Button>
+            <Button className="flex-1 gradient-primary text-primary-foreground border-0" onClick={handleExportCSV}>Exportar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

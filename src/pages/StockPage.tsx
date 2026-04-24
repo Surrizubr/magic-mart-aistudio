@@ -41,6 +41,7 @@ interface StockPageProps {
   onBack?: () => void;
 }
 
+export function StockPage({ onBack }: StockPageProps) {
   const { lang, t, formatCurrency: fc } = useLanguage();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');

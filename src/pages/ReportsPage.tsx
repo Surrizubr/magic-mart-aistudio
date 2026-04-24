@@ -27,17 +27,62 @@ interface ReportsPageProps {
 export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
   const { lang, t, formatCurrency: fc } = useLanguage();
   const history = getHistory();
-  const currentMonth = history.reduce((sum, h) => sum + h.total_price, 0);
   const [visitsOpen, setVisitsOpen] = useState(false);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
-  const productCounts = history.reduce<Record<string, number>>((acc, h) => {
+  // Group all history by month for the month picker and evolution chart
+  const monthsData = history.reduce<Record<string, { label: string, year: number, month: number, total: number }>>((acc, h) => {
+    const d = new Date(h.purchase_date);
+    const month = d.getMonth();
+    const year = d.getFullYear();
+    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+    if (!acc[key]) {
+      acc[key] = {
+        label: d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''),
+        year,
+        month,
+        total: 0
+      };
+    }
+    acc[key].total += h.total_price;
+    return acc;
+  }, {});
+
+  const sortedMonthKeys = Object.keys(monthsData).sort().reverse();
+  const [selectedMonth, setSelectedMonth] = useState<string>(sortedMonthKeys[0] || '');
+
+  // Filter history based on selected month
+  const filteredHistory = selectedMonth 
+    ? history.filter(h => h.purchase_date.startsWith(selectedMonth))
+    : history;
+
+  // Monthly Evolution Data
+  const monthlySpending = Object.entries(monthsData)
+    .map(([key, data]) => ({ 
+      month: data.label, 
+      value: data.total,
+      key: key
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+
+  // 1. Calculations fix
+  // Total of the selected month
+  const currentMonthTotal = filteredHistory.reduce((sum, h) => sum + h.total_price, 0);
+  
+  // Average per month calculation
+  const totalMonthsCount = Object.keys(monthsData).length;
+  const totalSpendAllTime = history.reduce((sum, h) => sum + h.total_price, 0);
+  const avgPerMonth = totalMonthsCount > 0 ? totalSpendAllTime / totalMonthsCount : 0;
+
+  // 2. Data for category spending (synced with selected month)
+  const productCounts = filteredHistory.reduce<Record<string, number>>((acc, h) => {
     acc[h.product_name] = (acc[h.product_name] || 0) + h.quantity;
     return acc;
   }, {});
   const topProducts = Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
 
-  // Unique visits (store + date)
-  const visitEntries = Array.from(new Set(history.map(h => `${h.store_name}|${h.purchase_date}`)))
+  // Unique visits (store + date) based on filtered history
+  const visitEntries = Array.from(new Set(filteredHistory.map(h => `${h.store_name}|${h.purchase_date}`)))
     .map(key => {
       const [store_name, purchase_date] = key.split('|');
       const match = history.find(h => h.store_name === store_name && h.purchase_date === purchase_date);
@@ -46,19 +91,16 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
     .sort((a, b) => new Date(b.purchase_date).getTime() - new Date(a.purchase_date).getTime());
   const totalVisits = visitEntries.length;
 
-  // Most visited stores
-  const storeCounts = history.reduce<Record<string, { count: number; lat?: number; lng?: number }>>((acc, h) => {
+  // Most visited stores based on filtered history
+  const storeCounts = filteredHistory.reduce<Record<string, { count: number; lat?: number; lng?: number }>>((acc, h) => {
     const key = h.store_name;
     if (!acc[key]) acc[key] = { count: 0, lat: h.store_lat, lng: h.store_lng };
-    // Count unique dates per store
     return acc;
   }, {});
-  // Recount using unique visits
+  // Recount using filtered unique visits
   visitEntries.forEach(v => {
     if (!storeCounts[v.store_name]) storeCounts[v.store_name] = { count: 0, lat: v.store_lat, lng: v.store_lng };
     storeCounts[v.store_name].count++;
-    if (v.store_lat) storeCounts[v.store_name].lat = v.store_lat;
-    if (v.store_lng) storeCounts[v.store_name].lng = v.store_lng;
   });
   const topStores = Object.entries(storeCounts)
     .sort((a, b) => b[1].count - a[1].count);
@@ -83,7 +125,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
     'Doces': 'Alimentos',
   };
 
-  const categoryTotals = history.reduce<Record<string, number>>((acc, h) => {
+  const categoryTotals = filteredHistory.reduce<Record<string, number>>((acc, h) => {
     const merged = categoryMerge[h.category] || h.category;
     acc[merged] = (acc[merged] || 0) + h.total_price;
     return acc;
@@ -100,13 +142,11 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
     percent: catTotal > 0 ? ((c.value / catTotal) * 100).toFixed(1) : '0',
   }));
 
-  const monthlyTotals = history.reduce<Record<string, number>>((acc, h) => {
-    const d = new Date(h.purchase_date);
-    const key = d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short' }).replace('.', '');
-    acc[key] = (acc[key] || 0) + h.total_price;
-    return acc;
-  }, {});
-  const monthlySpending = Object.entries(monthlyTotals).map(([month, value]) => ({ month, value }));
+  const onBarClick = (data: any) => {
+    if (data && data.key) {
+      setSelectedMonth(data.key);
+    }
+  };
 
   return (
     <div className="pb-20">
@@ -115,8 +155,12 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         subtitle={t('consumptionAnalysis')}
         onBack={onBack}
         action={
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary text-primary text-xs font-medium">
-            <Calendar className="w-3.5 h-3.5" /> Abr 2026
+          <button 
+            onClick={() => setMonthPickerOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary text-primary text-xs font-medium"
+          >
+            <Calendar className="w-3.5 h-3.5" /> 
+            {selectedMonth ? monthsData[selectedMonth]?.label : t('all')}
           </button>
         }
       />
@@ -126,12 +170,12 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card rounded-xl border border-border p-4">
             <TrendingUp className="w-5 h-5 text-primary mb-2" />
-            <p className="text-xl font-bold text-foreground">{fc(currentMonth)}</p>
+            <p className="text-xl font-bold text-foreground">{fc(currentMonthTotal)}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('thisMonth')}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
             <BarChart3 className="w-5 h-5 text-primary mb-2" />
-            <p className="text-xl font-bold text-foreground">{fc(currentMonth)}</p>
+            <p className="text-xl font-bold text-foreground">{fc(avgPerMonth)}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('avgPerMonth')}</p>
           </div>
           <button onClick={() => setVisitsOpen(true)} className="bg-card rounded-xl border border-border p-4 text-left hover:bg-accent/50 transition-colors">
@@ -153,11 +197,34 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
             <h3 className="text-sm font-bold text-foreground mb-1">{t('monthlyEvolution')}</h3>
             <p className="text-xs text-muted-foreground mb-3">{t('lastMonths').replace('{count}', String(monthlySpending.length))}</p>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlySpending}>
+              <BarChart 
+                data={monthlySpending}
+                onClick={(state) => {
+                  if (state && state.activePayload && state.activePayload.length > 0) {
+                    onBarClick(state.activePayload[0].payload);
+                  }
+                }}
+              >
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(160,10%,45%)' }} axisLine={true} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: 'hsl(160,10%,45%)' }} axisLine={true} tickLine={false} tickFormatter={(v) => fc(v)} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(v: number) => [fc(v), t('spending')]} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="hsl(152, 60%, 42%)" />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
+                  formatter={(v: number) => [fc(v), t('spending')]} 
+                />
+                <Bar 
+                  dataKey="value" 
+                  radius={[4, 4, 0, 0]} 
+                  fill="hsl(152, 60%, 42%)"
+                >
+                  {monthlySpending.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      cursor="pointer"
+                      fill={entry.key === selectedMonth ? 'hsl(152, 60%, 35%)' : 'hsl(152, 60%, 42%)'} 
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -283,6 +350,45 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
             {visitEntries.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">{t('noVisitsRecorded')}</p>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Month Selection Dialog */}
+      <Dialog open={monthPickerOpen} onOpenChange={setMonthPickerOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              {t('selectMonth')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            <button
+              onClick={() => {
+                setSelectedMonth('');
+                setMonthPickerOpen(false);
+              }}
+              className={`w-full p-3 rounded-lg text-left text-sm font-medium transition-colors ${
+                selectedMonth === '' ? 'bg-primary text-primary-foreground' : 'bg-accent hover:bg-accent/80 text-foreground'
+              }`}
+            >
+              {t('allMonths')}
+            </button>
+            {sortedMonthKeys.map(key => (
+              <button
+                key={key}
+                onClick={() => {
+                  setSelectedMonth(key);
+                  setMonthPickerOpen(false);
+                }}
+                className={`w-full p-3 rounded-lg text-left text-sm font-medium transition-colors ${
+                  selectedMonth === key ? 'bg-primary text-primary-foreground' : 'bg-accent hover:bg-accent/80 text-foreground'
+                }`}
+              >
+                {monthsData[key].label}
+              </button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>

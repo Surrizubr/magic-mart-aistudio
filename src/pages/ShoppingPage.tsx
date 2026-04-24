@@ -82,6 +82,11 @@ function InstructionsBanner({ item2Text }: InstructionsBannerProps) {
 export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
   const { t, currency, formatCurrency: fc } = useLanguage();
   const [mode, setMode] = useState<ShoppingMode>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [mode]);
+
   const [storeName, setStoreName] = useState('');
   const [storeSet, setStoreSet] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);

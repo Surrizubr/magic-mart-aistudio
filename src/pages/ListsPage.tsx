@@ -24,8 +24,11 @@ export function ListsPage({ onBack }: ListsPageProps) {
   const [newName, setNewName] = useState('');
   const [lists, setLists] = useState<ShoppingList[]>(() => getLists());
   const [selectedListId, setSelectedListId] = useState<string | null>(() => localStorage.getItem('selected_list_id'));
-
   const selectedList = lists.find(l => l.id === selectedListId) || null;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [selectedListId]);
 
   useEffect(() => {
     if (selectedListId) {

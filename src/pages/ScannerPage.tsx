@@ -49,6 +49,11 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
   const { lang, currency, formatCurrency: fc, t } = useLanguage();
   const [mode, setMode] = useState<ScanMode>('choose');
   const [step, setStep] = useState<ScanStep>('capture');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [mode, step]);
+
   const [images, setImages] = useState<string[]>([]);
   const [progressMsg, setProgressMsg] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);

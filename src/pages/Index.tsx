@@ -19,7 +19,7 @@ import { TabId } from '@/types';
 
 const Index = () => {
   const { info } = useSubscription();
-  const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [navStack, setNavStack] = useState<TabId[]>(['home']);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuInitialSubMenu, setMenuInitialSubMenu] = useState<any>(null);
   const [historyFilter, setHistoryFilter] = useState<{ date?: string; store?: string }>(() => {
@@ -27,32 +27,48 @@ const Index = () => {
     return saved ? JSON.parse(saved) : {};
   });
 
-  // Removed activeTab persistence as per user request to always start on Home
+  const activeTab = navStack[navStack.length - 1] || 'home';
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
 
   useEffect(() => {
     localStorage.setItem('history_filter', JSON.stringify(historyFilter));
   }, [historyFilter]);
 
-  const goHome = () => setActiveTab('home');
+  const navigateTo = (tab: TabId) => {
+    if (tab === activeTab) return;
+    setNavStack(prev => [...prev, tab]);
+  };
+
+  const goBack = () => {
+    if (navStack.length > 1) {
+      setNavStack(prev => prev.slice(0, -1));
+    } else if (activeTab !== 'home') {
+      setNavStack(['home']);
+    }
+  };
 
   const navigateToHistoryFiltered = (date: string, store: string) => {
     setHistoryFilter({ date, store });
-    setActiveTab('history');
+    navigateTo('history');
   };
 
   const renderPage = () => {
     switch (activeTab) {
-      case 'home': return <HomePage displayName={info?.display_name || undefined} onNavigate={setActiveTab} onOpenMenu={() => setMenuOpen(true)} />;
-      case 'lists': return <ListsPage onBack={goHome} />;
-      case 'stock': return <StockPage onBack={goHome} />;
-      case 'savings': return <SavingsPage onBack={goHome} onNavigateToHistory={navigateToHistoryFiltered} />;
-      case 'history': return <HistoryPage onNavigateToScanner={() => setActiveTab('scanner')} onBack={() => { setHistoryFilter({}); goHome(); }} filterDate={historyFilter.date} filterStore={historyFilter.store} />;
-      case 'reports': return <ReportsPage onBack={goHome} onNavigate={(tab) => setActiveTab(tab as TabId)} />;
-      case 'scanner': return <ScannerPage onBack={goHome} onNavigateToHistory={navigateToHistoryFiltered} onOpenMenu={() => { setMenuInitialSubMenu('gemini'); setMenuOpen(true); }} />;
-      case 'shopping': return <ShoppingPage onNavigate={setActiveTab} onBack={goHome} />;
-      case 'share': return <SharePage onBack={goHome} />;
-      case 'devtools': return <DevToolsPage onBack={goHome} />;
-      case 'backup': return <BackupPage onBack={goHome} />;
+      case 'home': return <HomePage displayName={info?.display_name || undefined} onNavigate={navigateTo} onOpenMenu={() => setMenuOpen(true)} />;
+      case 'lists': return <ListsPage onBack={goBack} />;
+      case 'stock': return <StockPage onBack={goBack} />;
+      case 'savings': return <SavingsPage onBack={goBack} onNavigateToHistory={navigateToHistoryFiltered} />;
+      case 'history': return <HistoryPage onNavigateToScanner={() => navigateTo('scanner')} onBack={() => { setHistoryFilter({}); goBack(); }} filterDate={historyFilter.date} filterStore={historyFilter.store} />;
+      case 'reports': return <ReportsPage onBack={goBack} onNavigate={(tab) => navigateTo(tab as TabId)} />;
+      case 'scanner': return <ScannerPage onBack={goBack} onNavigateToHistory={navigateToHistoryFiltered} onOpenMenu={() => { setMenuInitialSubMenu('gemini'); setMenuOpen(true); }} />;
+      case 'shopping': return <ShoppingPage onNavigate={navigateTo} onBack={goBack} />;
+      case 'share': return <SharePage onBack={goBack} />;
+      case 'devtools': return <DevToolsPage onBack={goBack} />;
+      case 'backup': return <BackupPage onBack={goBack} />;
+      default: return <HomePage onNavigate={navigateTo} onOpenMenu={() => setMenuOpen(true)} />;
     }
   };
 
@@ -63,9 +79,9 @@ const Index = () => {
     if (currentIndex === -1) return; // Not a swippable tab
 
     if (direction === 'left' && currentIndex < tabOrder.length - 1) {
-      setActiveTab(tabOrder[currentIndex + 1]);
+      navigateTo(tabOrder[currentIndex + 1]);
     } else if (direction === 'right' && currentIndex > 0) {
-      setActiveTab(tabOrder[currentIndex - 1]);
+      navigateTo(tabOrder[currentIndex - 1]);
     }
   };
 
@@ -94,8 +110,8 @@ const Index = () => {
         </motion.div>
       </AnimatePresence>
 
-      <BottomNav activeTab={activeTab} onTabChange={(tab) => { if (tab !== 'history') setHistoryFilter({}); setActiveTab(tab); }} />
-      <AppMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSubMenu(null); }} initialSubMenu={menuInitialSubMenu} onNavigate={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={(tab) => { if (tab !== 'history') setHistoryFilter({}); navigateTo(tab); }} />
+      <AppMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSubMenu(null); }} initialSubMenu={menuInitialSubMenu} onNavigate={navigateTo} />
     </div>
   );
 };

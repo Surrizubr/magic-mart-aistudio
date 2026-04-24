@@ -1029,37 +1029,6 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
           )}
         </AnimatePresence>
 
-        {/* Single Photo Tips Banner */}
-        {mode === 'single' && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <Info className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-xs font-bold text-primary uppercase tracking-wider">Dicas para uma boa foto</p>
-            </div>
-            
-            <ol className="space-y-2">
-              {[
-                "Coloque o cupom plano em uma mesa",
-                "Escolha um local bem iluminado",
-                "Veja se o cupom está bem legível",
-                "Enquadre todos os itens do cupom (produtos, nome do estabelecimento e data)",
-                "Se o cupom for muito longo, use a opção \"Múltiplas Fotos\" no menu anterior"
-              ].map((tip, idx) => (
-                <li key={idx} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
-                  <span className="font-bold text-primary">{idx + 1}.</span>
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ol>
-          </motion.div>
-        )}
-
         {/* Capture buttons */}
         <div className="space-y-3">
           <button
@@ -1078,6 +1047,37 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu }: Scanner
               </p>
             </div>
           </button>
+
+          {/* Single Photo Tips Banner */}
+          {mode === 'single' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Info className="w-4 h-4 text-primary" />
+                </div>
+                <p className="text-xs font-bold text-primary uppercase tracking-wider">Dicas para uma boa foto</p>
+              </div>
+              
+              <ol className="space-y-2">
+                {[
+                  "Coloque o cupom plano em uma mesa",
+                  "Escolha um local bem iluminado",
+                  "Veja se o cupom está bem legível",
+                  "Enquadre todos os itens do cupom (produtos, nome do estabelecimento e data)",
+                  "Se o cupom for muito longo, use a opção \"Múltiplas Fotos\" no menu anterior"
+                ].map((tip, idx) => (
+                  <li key={idx} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
+                    <span className="font-bold text-primary">{idx + 1}.</span>
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ol>
+            </motion.div>
+          )}
 
           {mode === 'multi' && (
             <div className="bg-accent/50 rounded-lg p-3 space-y-1.5">

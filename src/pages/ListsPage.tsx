@@ -16,6 +16,7 @@ interface ListsPageProps {
   onBack?: () => void;
 }
 
+export function ListsPage({ onBack }: ListsPageProps) {
   const { t } = useLanguage();
   const [filter, setFilter] = useState<Filter>('active');
   const [showNewList, setShowNewList] = useState(false);

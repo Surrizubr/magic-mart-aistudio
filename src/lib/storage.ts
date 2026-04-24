@@ -64,4 +64,31 @@ export const storage = {
     }
     localStorage.clear();
   },
+
+  async keys(): Promise<string[]> {
+    if (isNative) {
+      const { keys } = await Preferences.keys();
+      return keys;
+    }
+    return Object.keys(localStorage);
+  },
+
+  async getAll(): Promise<Record<string, any>> {
+    const all: Record<string, any> = {};
+    if (isNative) {
+      const { keys } = await Preferences.keys();
+      for (const key of keys) {
+        const val = await this.get(key);
+        all[key] = val;
+      }
+    } else {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          all[key] = await this.get(key);
+        }
+      }
+    }
+    return all;
+  }
 };

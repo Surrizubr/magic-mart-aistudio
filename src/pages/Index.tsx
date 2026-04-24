@@ -14,6 +14,7 @@ import { ScannerPage } from '@/pages/ScannerPage';
 import { ShoppingPage } from '@/pages/ShoppingPage';
 import { SharePage } from '@/pages/SharePage';
 import { DevToolsPage } from '@/pages/DevToolsPage';
+import { BackupPage } from '@/pages/BackupPage';
 import { TabId } from '@/types';
 
 const Index = () => {
@@ -51,6 +52,7 @@ const Index = () => {
       case 'shopping': return <ShoppingPage onNavigate={setActiveTab} onBack={goHome} />;
       case 'share': return <SharePage onBack={goHome} />;
       case 'devtools': return <DevToolsPage onBack={goHome} />;
+      case 'backup': return <BackupPage onBack={goHome} />;
     }
   };
 
@@ -93,7 +95,7 @@ const Index = () => {
       </AnimatePresence>
 
       <BottomNav activeTab={activeTab} onTabChange={(tab) => { if (tab !== 'history') setHistoryFilter({}); setActiveTab(tab); }} />
-      <AppMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSubMenu(null); }} initialSubMenu={menuInitialSubMenu} />
+      <AppMenu open={menuOpen} onClose={() => { setMenuOpen(false); setMenuInitialSubMenu(null); }} initialSubMenu={menuInitialSubMenu} onNavigate={setActiveTab} />
     </div>
   );
 };

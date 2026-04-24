@@ -9,6 +9,7 @@ import { useDevMode } from '@/contexts/DevModeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { resetAllData } from '@/data/mockData';
 import { toast } from 'sonner';
+import { TabId } from '@/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,15 +21,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-type SubMenu = null | 'themes' | 'languages' | 'preferences' | 'about' | 'gemini' | 'payment';
+type SubMenu = null | 'themes' | 'languages' | 'preferences' | 'about' | 'gemini' | 'payment' | 'backup';
 
 interface AppMenuProps {
   open: boolean;
   onClose: () => void;
   initialSubMenu?: SubMenu;
+  onNavigate?: (tab: TabId) => void;
 }
 
-export function AppMenu({ open, onClose, initialSubMenu }: AppMenuProps) {
+export function AppMenu({ open, onClose, initialSubMenu, onNavigate }: AppMenuProps) {
   const { theme, setTheme, largeText, setLargeText } = useTheme();
   const { lang, setLang, t } = useLanguage();
   const { stockExpiryDays, setStockExpiryDays } = usePreferences();
@@ -156,6 +158,7 @@ export function AppMenu({ open, onClose, initialSubMenu }: AppMenuProps) {
     { id: 'preferences' as SubMenu, icon: Settings, label: t('preferences'), desc: t('prefDesc') },
     { id: 'gemini' as SubMenu, icon: Key, label: t('geminiApiKey'), desc: geminiHasKey ? t('geminiConfigured') : t('geminiNotConfigured') },
     { id: 'payment' as SubMenu, icon: CreditCard, label: t('payment'), desc: t('paymentDesc') },
+    { id: 'backup' as SubMenu, icon: Database, label: t('backup'), desc: t('backupDesc') },
     { id: 'about' as SubMenu, icon: Info, label: t('about'), desc: t('aboutDesc') },
   ];
 
@@ -417,7 +420,16 @@ export function AppMenu({ open, onClose, initialSubMenu }: AppMenuProps) {
                     {menuItems.map((item) => (
                       <button
                         key={item.id}
-                        onClick={() => item.id === 'gemini' ? openGeminiMenu() : setSubMenu(item.id)}
+                        onClick={() => {
+                          if (item.id === 'backup') {
+                            onNavigate?.('backup');
+                            onClose();
+                          } else if (item.id === 'gemini') {
+                            openGeminiMenu();
+                          } else {
+                            setSubMenu(item.id);
+                          }
+                        }}
                         className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
                       >
                         <item.icon className="w-5 h-5 text-primary" />

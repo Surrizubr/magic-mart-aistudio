@@ -58,4 +58,4 @@ export interface PurchaseHistory {
 
 export type SubscriptionStatus = 'loading' | 'trial' | 'active' | 'expired' | 'no_trial';
 
-export type TabId = 'home' | 'lists' | 'stock' | 'savings' | 'history' | 'reports' | 'scanner' | 'shopping' | 'share' | 'devtools';
+export type TabId = 'home' | 'lists' | 'stock' | 'savings' | 'history' | 'reports' | 'scanner' | 'shopping' | 'share' | 'devtools' | 'backup';

@@ -228,6 +228,16 @@ const translations: Record<string, Record<Lang, string>> = {
   listArchived: { pt: 'Lista arquivada.', en: 'List archived.', es: 'Lista archivada.' },
   alertRemoved: { pt: 'Alerta removido.', en: 'Alert removed.', es: 'Alerta eliminado.' },
   addedToShoppingList: { pt: 'Adicionado à lista de compras.', en: 'Added to shopping list.', es: 'Agregado a la lista de compras.' },
+  backup: { pt: 'Backup', en: 'Backup', es: 'Respaldo' },
+  backupDesc: { pt: 'Gerenciar backups dos seus dados', en: 'Manage data backups', es: 'Gestionar copias de seguridad' },
+  makeBackup: { pt: 'Fazer Backup', en: 'Make Backup', es: 'Hacer Copia' },
+  restoreLastBackup: { pt: 'Restaurar último backup', en: 'Restore last backup', es: 'Restaurar última copia' },
+  restoreFromFile: { pt: 'Restaurar com arquivo', en: 'Restore from file', es: 'Restaurar con archivo' },
+  backupSuccess: { pt: 'Backup realizado com sucesso!', en: 'Backup successful!', es: 'Copia realizada con éxito!' },
+  restoreSuccess: { pt: 'Dados restaurados com sucesso!', en: 'Data restored successfully!', es: '¡Datos restaurados con éxito!' },
+  restoreError: { pt: 'Erro ao restaurar dados. Verifique o arquivo.', en: 'Error restoring data. Check the file.', es: 'Error al restaurar. Revisa el archivo.' },
+  lastBackupFound: { pt: 'Último backup encontrado de:', en: 'Last backup found from:', es: 'Última copia encontrada de:' },
+  noLastBackup: { pt: 'Nenhum backup local encontrado.', en: 'No local backup found.', es: 'No se encontró copia local.' },
 };
 
 function formatNumber(value: number, curr: string): string {

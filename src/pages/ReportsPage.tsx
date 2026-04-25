@@ -341,7 +341,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           }, {});
 
           const data = Object.entries(transportByMonth)
-            .sort((a, b) => a[0].localeCompare(b[0]))
+            .sort((a, b) => b[0].localeCompare(a[0]))
             .map(([key, val]) => ({ month: val.label, value: val.total }));
 
           if (data.length === 0) return null;
@@ -349,14 +349,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           return (
             <div className="bg-card rounded-xl border border-border p-4">
               <h3 className="text-sm font-bold text-foreground mb-4">{t('transportMonthly')}</h3>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={data}>
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => fc(v)} />
-                  <Tooltip formatter={(v: number) => [fc(v), t('spending')]} cursor={{ fill: 'transparent' }} />
-                  <Bar dataKey="value" fill="hsl(210, 70%, 50%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                {data.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                    <span className="text-sm text-muted-foreground capitalize">{item.month}</span>
+                    <span className="text-sm font-bold text-foreground">{fc(item.value)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })()}
@@ -371,7 +371,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           }, {});
 
           const data = Object.entries(maintenanceByYear)
-            .sort((a, b) => a[0].localeCompare(b[0]))
+            .sort((a, b) => b[0].localeCompare(a[0]))
             .map(([year, total]) => ({ year, value: total }));
 
           if (data.length === 0) return null;
@@ -379,14 +379,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           return (
             <div className="bg-card rounded-xl border border-border p-4">
               <h3 className="text-sm font-bold text-foreground mb-4">{t('maintenanceYearly')}</h3>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={data}>
-                  <XAxis dataKey="year" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => fc(v)} />
-                  <Tooltip formatter={(v: number) => [fc(v), t('spending')]} cursor={{ fill: 'transparent' }} />
-                  <Bar dataKey="value" fill="hsl(25, 80%, 55%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                {data.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center pb-2 border-b border-border/30 last:border-0 last:pb-0">
+                    <span className="text-sm text-muted-foreground">{item.year}</span>
+                    <span className="text-sm font-bold text-foreground">{fc(item.value)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })()}

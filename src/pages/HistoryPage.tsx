@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const categoryColors: Record<string, string> = {
@@ -134,6 +136,7 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
   
   // Export states
   const [showExportModal, setShowExportModal] = useState(false);
+  const [exportAllChecked, setExportAllChecked] = useState(false);
   const [exportRange, setExportRange] = useState({ 
     start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 10),
     end: new Date().toISOString().slice(0, 10) 
@@ -269,9 +272,19 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     }
   };
 
-  const handleExportCSV = (range?: { start: string; end: string }) => {
-    const r = range || exportRange;
+  const handleExportCSV = () => {
     const all = getHistory();
+    let r = exportRange;
+    
+    if (exportAllChecked) {
+      if (all.length === 0) {
+        toast.error(t('noDataFound'));
+        return;
+      }
+      const dates = all.map(h => h.purchase_date).sort();
+      r = { start: dates[0], end: dates[dates.length - 1] };
+    }
+
     const filtered = all.filter(h => h.purchase_date >= r.start && h.purchase_date <= r.end);
     
     if (filtered.length === 0) {
@@ -306,19 +319,6 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     toast.success(`${filtered.length} ${t('exportSuccess')}`);
   };
 
-  const handleExportAll = () => {
-    const all = getHistory();
-    if (all.length === 0) {
-      toast.error(t('noDataFound'));
-      return;
-    }
-    const dates = all.map(h => h.purchase_date).sort();
-    const start = dates[0];
-    const end = dates[dates.length - 1];
-    const newRange = { start, end };
-    setExportRange(newRange);
-    handleExportCSV(newRange);
-  };
 
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -758,7 +758,10 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
       </Dialog>
 
       {/* Export Dialog */}
-      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+      <Dialog open={showExportModal} onOpenChange={(open) => {
+        setShowExportModal(open);
+        if (!open) setExportAllChecked(false);
+      }}>
         <DialogContent className="max-w-[90vw] rounded-xl">
           <DialogHeader>
             <DialogTitle className="text-base">{t('exportHistoryTitle')}</DialogTitle>
@@ -770,7 +773,8 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
                 type="date"
                 value={exportRange.start}
                 onChange={(e) => setExportRange(prev => ({ ...prev, start: e.target.value }))}
-                className="text-sm"
+                className="text-sm disabled:opacity-50 disabled:bg-muted"
+                disabled={exportAllChecked}
               />
             </div>
             <div className="space-y-2">
@@ -779,15 +783,19 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
                 type="date"
                 value={exportRange.end}
                 onChange={(e) => setExportRange(prev => ({ ...prev, end: e.target.value }))}
-                className="text-sm"
+                className="text-sm disabled:opacity-50 disabled:bg-muted"
+                disabled={exportAllChecked}
               />
-              <Button 
-                variant="link" 
-                className="text-xs text-primary p-0 h-auto font-bold"
-                onClick={handleExportAll}
-              >
-                {t('exportAll')}
-              </Button>
+              <div className="flex items-center space-x-2 mt-2 pt-1 border-t border-dashed border-muted">
+                <Checkbox 
+                  id="export-all" 
+                  checked={exportAllChecked} 
+                  onCheckedChange={(checked) => setExportAllChecked(!!checked)}
+                />
+                <Label htmlFor="export-all" className="text-xs font-bold text-primary cursor-pointer uppercase">
+                  {t('exportAll')}
+                </Label>
+              </div>
             </div>
             <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
               <p className="text-[10px] text-primary leading-tight">

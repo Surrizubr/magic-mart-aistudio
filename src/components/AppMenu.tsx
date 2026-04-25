@@ -23,7 +23,7 @@ export function AppMenu({ open, onClose, initialSubMenu, onNavigate }: AppMenuPr
   const { theme, setTheme, largeText, setLargeText } = useTheme();
   const { lang, setLang, t } = useLanguage();
   const { stockExpiryDays, setStockExpiryDays } = usePreferences();
-  const { info, openCheckout, openPortal } = useSubscription();
+  const { info, openPortal, restorePurchases, presentPaywall } = useSubscription();
   const { devMode, setDevMode } = useDevMode();
   const [subMenu, setSubMenu] = useState<SubMenu>(null);
 
@@ -327,27 +327,35 @@ export function AppMenu({ open, onClose, initialSubMenu, onNavigate }: AppMenuPr
         return (
           <div className="space-y-2">
             <button
-              onClick={() => { openCheckout(); onClose(); }}
+              onClick={() => { presentPaywall(); onClose(); }}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
             >
               <RefreshCw className="w-5 h-5 text-primary" />
               <div className="text-left flex-1">
                 <p className="text-sm font-medium text-foreground">{t('renew')}</p>
-                <p className="text-xs text-muted-foreground">{t('renewDesc')}</p>
+                <p className="text-xs text-muted-foreground">{t('renewDesc') || t('premiumSubscribe')}</p>
               </div>
             </button>
-            {canRefund && (
-              <button
-                onClick={() => { openPortal(); onClose(); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
-              >
-                <Undo2 className="w-5 h-5 text-destructive" />
-                <div className="text-left flex-1">
-                  <p className="text-sm font-medium text-foreground">{t('refund')}</p>
-                  <p className="text-xs text-muted-foreground">{t('refundDesc')}</p>
-                </div>
-              </button>
-            )}
+            <button
+              onClick={() => { openPortal(); onClose(); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
+            >
+              <Settings className="w-5 h-5 text-primary" />
+              <div className="text-left flex-1">
+                <p className="text-sm font-medium text-foreground">{t('manageSubscription') || 'Gerenciar Assinatura'}</p>
+                <p className="text-xs text-muted-foreground">{t('manageSubDesc') || 'Acesse a Central do Cliente'}</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { restorePurchases(); onClose(); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
+            >
+              <Undo2 className="w-5 h-5 text-primary" />
+              <div className="text-left flex-1">
+                <p className="text-sm font-medium text-foreground">{t('restorePurchase')}</p>
+                <p className="text-xs text-muted-foreground">{t('restoreDesc') || 'Restaurar compras anteriores'}</p>
+              </div>
+            </button>
           </div>
         );
 

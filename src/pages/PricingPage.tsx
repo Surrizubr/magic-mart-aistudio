@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 export function PricingPage() {
   const { t, currency } = useLanguage();
-  const { openCheckout, loading: checkoutLoading, status, loading: subLoading } = useSubscriptionContext();
+  const { openCheckout, restorePurchases, loading: checkoutLoading, status, loading: subLoading } = useSubscriptionContext();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -87,13 +87,8 @@ export function PricingPage() {
         </div>
 
         <button
-          onClick={() => {
-            setLoading(true);
-            setTimeout(() => {
-              setLoading(false);
-              toast.info(t('checkingSubscription'));
-            }, 1000);
-          }}
+          onClick={restorePurchases}
+          disabled={loading || subLoading}
           className="w-full flex items-center justify-center gap-2 p-3 text-xs text-muted-foreground hover:text-primary transition-colors font-medium border border-dashed border-muted-foreground/20 rounded-xl"
         >
           {t('restorePurchase')}

@@ -1,5 +1,5 @@
 import { Purchases, LOG_LEVEL, CustomerInfo } from '@revenuecat/purchases-capacitor';
-import { PurchasesPaywall } from '@revenuecat/purchases-capacitor-ui';
+import { RevenueCatUI, PAYWALL_RESULT } from '@revenuecat/purchases-capacitor-ui';
 
 const REVENUECAT_API_KEY = 'test_TFGrjJJFMQtcxougEBZrhOnbdjf';
 const ENTITLEMENT_ID = 'IDAPPS Premium';
@@ -40,8 +40,8 @@ export class RevenueCatService {
   static async presentPaywall(): Promise<boolean> {
     try {
       await this.initialize();
-      const result = await PurchasesPaywall.present();
-      return result.result === 'PURCHASED' || result.result === 'RESTORED';
+      const result = await RevenueCatUI.presentPaywall();
+      return result.result === PAYWALL_RESULT.PURCHASED || result.result === PAYWALL_RESULT.RESTORED;
     } catch (error) {
       console.error('Error presenting paywall:', error);
       return false;
@@ -51,14 +51,9 @@ export class RevenueCatService {
   static async presentCustomerCenter(): Promise<void> {
     try {
       await this.initialize();
-      // Since @revenuecat/purchases-capacitor-ui might not have CustomerCenter yet in all versions, 
-      // we check for its availability or use a standard portal if not available.
-      // For standard Capacitor implementation, managing subscriptions is usually handled via the store's native UI.
-      // However, we'll try to use the RevenueCat Customer Center if the SDK supports it.
-      // @ts-expect-error - CustomerCenter might be new
-      if (PurchasesPaywall.presentCustomerCenter) {
-        // @ts-expect-error - method call on new SDK component
-        await PurchasesPaywall.presentCustomerCenter();
+      // Using RevenueCatUI.presentCustomerCenter if available
+      if (typeof RevenueCatUI.presentCustomerCenter === 'function') {
+        await RevenueCatUI.presentCustomerCenter();
       } else {
         console.warn('Customer Center not available in this SDK version');
       }

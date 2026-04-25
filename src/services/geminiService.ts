@@ -133,6 +133,7 @@ REGRAS:
    - "restaurant": para bares, restaurantes, lanchonetes, padaria (se for consumo local), etc.
    - "supermarket": para mercados, mercearias, hortifruti, etc.
    - "transport": para postos de combustível, apps de transporte, pedágios, etc.
+   - REGRAS DE FALLBACK: Se houver dúvida, analise os itens: itens de consumo imediato ou refeições indicam "restaurant"; combustível ou serviços de mobilidade indicam "transport"; compras de mercearia variadas indicam "supermarket". Se ainda assim não for possível identificar, use "supermarket" como padrão.
 4. Categorias de ITENS: Frutas, Verduras, Carnes, Laticínios, Padaria, Bebidas, Limpeza, Higiene, Grãos, Temperos, Restaurante, Outros. 
    - Se establishment_type for "restaurant", a categoria de TODOS os itens deve ser obrigatoriamente "Restaurante".
 5. Identifique itens duplicados e remova-os.

@@ -354,27 +354,29 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
     saveHistory(history);
 
     // Save to stock_items
-    const existingStock: any[] = getStock();
-    result.items.forEach(item => {
-      const existing = existingStock.find(s => s.product_name.toLowerCase() === item.product_name.toLowerCase());
-      if (existing) {
-        existing.quantity += item.quantity;
-      } else {
-        existingStock.push({
-          id: `stock_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          product_name: item.product_name,
-          category: item.category,
-          quantity: item.quantity,
-          unit: item.unit,
-          min_quantity: 1,
-          daily_consumption_rate: 0.1,
-          status: 'ok',
-          last_price: item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price,
-          receipt_id: receiptId,
-        });
-      }
-    });
-    saveStock(existingStock);
+    if (result.establishment_type === 'supermarket') {
+      const existingStock: any[] = getStock();
+      result.items.forEach(item => {
+        const existing = existingStock.find(s => s.product_name.toLowerCase() === item.product_name.toLowerCase());
+        if (existing) {
+          existing.quantity += item.quantity;
+        } else {
+          existingStock.push({
+            id: `stock_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            product_name: item.product_name,
+            category: item.category,
+            quantity: item.quantity,
+            unit: item.unit,
+            min_quantity: 1,
+            daily_consumption_rate: 0.1,
+            status: 'ok',
+            last_price: item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price,
+            receipt_id: receiptId,
+          });
+        }
+      });
+      saveStock(existingStock);
+    }
 
     // Recalculate consumption rates based on purchase history
     recalculateAllConsumptionRates();

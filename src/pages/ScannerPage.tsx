@@ -887,7 +887,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
                 className="w-full gradient-primary text-primary-foreground border-0 h-11"
               >
                 <Package className="w-4 h-4 mr-2" />
-                {t('saveToStock')}
+                {result.establishment_type === 'supermarket' ? t('saveToStock') : t('saveToHistoryOnly')}
               </Button>
               {/* Discount toggle buttons */}
               {originalDiscounts.size > 0 && (
@@ -1085,7 +1085,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
                 disabled={result.items.length === 0}
               >
                 <Package className="w-4 h-4 mr-2" />
-                {t('saveToStock')}
+                {result.establishment_type === 'supermarket' ? t('saveToStock') : t('saveToHistoryOnly')}
               </Button>
             ) : (
               <motion.div
@@ -1096,7 +1096,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
                 <Check className="w-8 h-8 text-primary mx-auto mb-2" />
                 <p className="text-sm font-semibold text-primary">{t('saveSuccessful')}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {result.items.length} {t('itemsAddedMsg')}
+                  {result.items.length} {result.establishment_type === 'supermarket' ? t('itemsAddedMsg') : t('itemsAddedHistoryOnlyMsg')}
                 </p>
               </motion.div>
             )}

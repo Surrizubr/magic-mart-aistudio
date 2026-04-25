@@ -1,6 +1,23 @@
 import { supabase, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 
+export async function testGeminiConnection(providedApiKey?: string) {
+  try {
+    const geminiApiKey = providedApiKey || localStorage.getItem('gemini-api-key') || '';
+    if (!geminiApiKey) return false;
+    
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: { parts: [{ text: "ping" }] }
+    });
+    return !!response.text;
+  } catch (error) {
+    console.error("Gemini connection test failed:", error);
+    return false;
+  }
+}
+
 export async function analyzeWithGemini(images: string[], prompt: string, providedApiKey?: string) {
   try {
     const geminiApiKey = providedApiKey || localStorage.getItem('gemini-api-key') || '';

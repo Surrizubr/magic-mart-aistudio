@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Camera, Images, X, Loader2, Check, ArrowLeft, Package, MapPin, Trash2, AlertTriangle, Edit2, Plus, History, Eye, Settings, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { analyzeWithGemini, RECEIPT_PROMPT } from '@/services/geminiService';
+import { analyzeWithGemini, testGeminiConnection, RECEIPT_PROMPT } from '@/services/geminiService';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { recalculateAllConsumptionRates } from '@/lib/consumptionCalculator';
@@ -60,6 +60,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   const [progressMsg, setProgressMsg] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
   const [trialCount, setTrialCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [dateError, setDateError] = useState(false);
   const [result, setResult] = useState<AIReceiptResult | null>(null);
   const [saved, setSaved] = useState(false);
@@ -76,6 +77,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
     setProgressMsg('');
     setProgressPercent(0);
     setTrialCount(0);
+    setIsRetrying(false);
     setResult(null);
     setSaved(false);
     setEditingItem(null);
@@ -139,10 +141,17 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
     });
   };
 
-  const processImages = async (imgs: string[], isAutoRetry = false) => {
+  const processImages = async (imgs: string[]) => {
     setStep('processing');
     setError(null);
     setProgressPercent(0);
+
+    const geminiApiKey = localStorage.getItem('gemini-api-key') || '';
+    if (!geminiApiKey) {
+      setStep('capture');
+      setError('API_KEY_ERROR');
+      return;
+    }
 
     try {
       // Step 1: Checando comunicação com servidor
@@ -153,12 +162,6 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       // Step 2: Validando chave API
       setProgressMsg(t('aiStep2'));
       setProgressPercent(15);
-      const geminiApiKey = localStorage.getItem('gemini-api-key') || '';
-      if (!geminiApiKey) {
-        setStep('capture');
-        setError('API_KEY_ERROR');
-        return;
-      }
       await new Promise(r => setTimeout(r, 600));
 
       // Step 3: Comprimindo e enviando foto
@@ -167,28 +170,54 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       const compressedImgs = await Promise.all(imgs.map(img => compressImage(img)));
       setProgressPercent(35);
 
-      // Start AI Analysis (this is the long one)
-      // We'll simulate progress while waiting
-      const aiPromise = analyzeWithGemini(compressedImgs, RECEIPT_PROMPT, geminiApiKey);
-      
-      // Progress simulation for AI analysis (steps 4, 5, 6)
-      const aiStartTime = Date.now();
-      const interval = setInterval(() => {
-        const elapsed = Date.now() - aiStartTime;
-        if (elapsed < 3000) {
-          setProgressMsg(t('aiStep4'));
-          setProgressPercent(Math.round(Math.min(45, 35 + (elapsed / 300))));
-        } else if (elapsed < 7000) {
-          setProgressMsg(t('aiStep5'));
-          setProgressPercent(Math.round(Math.min(65, 45 + (elapsed - 3000) / 200)));
-        } else {
-          setProgressMsg(t('aiStep6'));
-          setProgressPercent(Math.round(Math.min(85, 65 + (elapsed - 7000) / 400)));
-        }
-      }, 500);
+      let resultData: any = null;
+      let attempts = 0;
+      const MAX_ATTEMPTS = 10;
+      let lastError: any = null;
 
-      const resultData = await aiPromise;
-      clearInterval(interval);
+      while (attempts < MAX_ATTEMPTS) {
+        let interval: any = null;
+        try {
+          if (attempts > 0) {
+            setIsRetrying(true);
+            setProgressMsg(t('analyzingWait'));
+            await new Promise(r => setTimeout(r, 1000));
+          }
+
+          // Start AI Analysis (this is the long one)
+          // We'll simulate progress while waiting
+          const aiPromise = analyzeWithGemini(compressedImgs, RECEIPT_PROMPT, geminiApiKey);
+          
+          // Progress simulation for AI analysis (steps 4, 5, 6)
+          const aiStartTime = Date.now();
+          interval = setInterval(() => {
+            const elapsed = Date.now() - aiStartTime;
+            if (elapsed < 3000) {
+              setProgressMsg(attempts > 0 ? t('analyzingWait') : t('aiStep4'));
+              setProgressPercent(Math.round(Math.min(45, 35 + (elapsed / 300))));
+            } else if (elapsed < 7000) {
+              setProgressMsg(attempts > 0 ? t('analyzingWait') : t('aiStep5'));
+              setProgressPercent(Math.round(Math.min(65, 45 + (elapsed - 3000) / 200)));
+            } else {
+              setProgressMsg(attempts > 0 ? t('analyzingWait') : t('aiStep6'));
+              setProgressPercent(Math.round(Math.min(85, 65 + (elapsed - 7000) / 400)));
+            }
+          }, 500);
+
+          resultData = await aiPromise;
+          break; // Success!
+        } catch (err: any) {
+          lastError = err;
+          attempts++;
+          console.warn(`Analysis attempt ${attempts} failed:`, err);
+        } finally {
+          if (interval) clearInterval(interval);
+        }
+      }
+
+      if (!resultData) {
+        throw lastError;
+      }
 
       // Step 7: Consolidando valores
       setProgressMsg(t('aiStep7'));
@@ -248,19 +277,24 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       };
 
       setTrialCount(0);
+      setIsRetrying(false);
       setResult(finalResult);
       setStep('results');
     } catch (err: any) {
-      console.error('AI analysis error:', err);
+      console.error('AI analysis error after 10 attempts:', err);
+      setIsRetrying(false);
       
-      if (!isAutoRetry && trialCount !== 2) {
-        setTrialCount(1);
-        await new Promise(r => setTimeout(r, 1000));
-        processImages(imgs, true);
-      } else if (isAutoRetry) {
-        setTrialCount(2);
-        setError(t('errorNewPhoto'));
-        setStep('capture');
+      const isApiOk = await testGeminiConnection(geminiApiKey);
+      
+      if (isApiOk) {
+        if (trialCount === 0) {
+          setTrialCount(1);
+          setStep('capture');
+        } else {
+          setTrialCount(2);
+          setError(t('errorNewPhoto'));
+          setStep('capture');
+        }
       } else {
         setTrialCount(0);
         setError('API_KEY_ERROR');
@@ -705,7 +739,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
           <div className="w-full max-w-xs space-y-3">
             <div className="relative">
               <Progress value={progressPercent} className="h-3" />
-              {trialCount === 1 && (
+              {isRetrying && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-6 bg-amber-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
                   !
                 </div>
@@ -1105,27 +1139,45 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4"
+              className="space-y-4"
             >
-              {images.map((img, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="relative shrink-0"
-                >
-                  <img src={img} alt={`Foto ${i + 1}`} className="w-24 h-32 object-cover rounded-lg shadow-card" />
-                  <button
-                    onClick={() => removeImage(i)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                {images.map((img, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="relative shrink-0"
                   >
-                    <X className="w-3 h-3 text-destructive-foreground" />
-                  </button>
-                  <span className="absolute bottom-1 left-1 bg-foreground/70 text-background text-[10px] px-1 rounded">
-                    {i + 1}
-                  </span>
+                    <img src={img} alt={`Foto ${i + 1}`} className="w-24 h-32 object-cover rounded-lg shadow-card" />
+                    <button
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"
+                    >
+                      <X className="w-3 h-3 text-destructive-foreground" />
+                    </button>
+                    <span className="absolute bottom-1 left-1 bg-foreground/70 text-background text-[10px] px-1 rounded">
+                      {i + 1}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+
+              {trialCount === 1 && images.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="px-4"
+                >
+                  <Button
+                    onClick={() => processImages(images)}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white h-11 shadow-md"
+                  >
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t('reanalyzeBtn')}
+                  </Button>
                 </motion.div>
-              ))}
+              )}
             </motion.div>
           )}
         </AnimatePresence>

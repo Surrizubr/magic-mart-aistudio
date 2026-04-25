@@ -49,6 +49,7 @@ const translations: Record<string, Record<Lang, string>> = {
   hasAccount: { pt: 'Já tem conta?', en: 'Already have an account?', es: '¿Ya tienes cuenta?' },
   checkingSubscription: { pt: 'Verificando assinatura...', en: 'Checking subscription...', es: 'Verificando suscripción...' },
   restorePurchase: { pt: 'Restaurar Assinatura', en: 'Restore Subscription', es: 'Restaurar Suscripción' },
+  devMode: { pt: 'Modo Desenvolvedor (Bypass)', en: 'Developer Mode (Bypass)', es: 'Modo de Desarrollador (Bypass)' },
   restoreDesc: { pt: 'Restaurar compras anteriores', en: 'Restore previous purchases', es: 'Restaurar compras anteriores' },
   manageSubscription: { pt: 'Gerenciar Assinatura', en: 'Manage Subscription', es: 'Gestionar Suscripción' },
   manageSubDesc: { pt: 'Acesse a Central do Cliente', en: 'Access Customer Center', es: 'Acceder al Centro de Clientes' },

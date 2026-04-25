@@ -6,9 +6,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { toast } from 'sonner';
 
+import { useDevMode } from '@/contexts/DevModeContext';
+
 export function PricingPage() {
   const { t, currency } = useLanguage();
   const { openCheckout, restorePurchases, loading: checkoutLoading, status, loading: subLoading } = useSubscriptionContext();
+  const { setDevMode } = useDevMode();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -92,6 +95,16 @@ export function PricingPage() {
           className="w-full flex items-center justify-center gap-2 p-3 text-xs text-muted-foreground hover:text-primary transition-colors font-medium border border-dashed border-muted-foreground/20 rounded-xl"
         >
           {t('restorePurchase')}
+        </button>
+
+        <button
+          onClick={() => {
+            setDevMode(true);
+            toast.success('Modo Desenvolvedor Ativado!');
+          }}
+          className="w-full flex items-center justify-center gap-2 p-2 text-[10px] text-primary/40 hover:text-primary transition-colors font-medium border border-dotted border-primary/20 rounded-lg"
+        >
+          {t('devMode') || 'Modo Desenvolvedor (Bypass)'}
         </button>
 
         <button

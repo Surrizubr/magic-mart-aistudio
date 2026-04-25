@@ -11,6 +11,7 @@ import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { getStock, saveStock, getHistory, saveHistory } from '@/data/mockData';
+import { PermissionGate } from '@/components/PermissionGate';
 
 type ShoppingMode = null | 'list' | 'register' | 'category';
 
@@ -90,6 +91,8 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
   const [storeName, setStoreName] = useState('');
   const [storeSet, setStoreSet] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
+  const [showLocationGate, setShowLocationGate] = useState(false);
+  const [showCameraGate, setShowCameraGate] = useState(false);
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState('');
@@ -111,6 +114,11 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
   const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   const handleGeoLocation = () => {
+    setShowLocationGate(true);
+  };
+
+  const executeGeoLocation = () => {
+    setShowLocationGate(false);
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -261,6 +269,11 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
   }, [cameraStream, cameraActive]);
 
   const startCamera = async () => {
+    setShowCameraGate(true);
+  };
+
+  const executeStartCamera = async () => {
+    setShowCameraGate(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       setCameraStream(stream);
@@ -501,6 +514,18 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
   // Active shopping session
   return (
     <div className="pb-20">
+      <PermissionGate 
+        isOpen={showLocationGate} 
+        type="location" 
+        onAllow={executeGeoLocation} 
+        onCancel={() => setShowLocationGate(false)} 
+      />
+      <PermissionGate 
+        isOpen={showCameraGate} 
+        type="camera" 
+        onAllow={executeStartCamera} 
+        onCancel={() => setShowCameraGate(false)} 
+      />
       {/* Camera Full Screen Overlay */}
       <AnimatePresence>
         {cameraActive && (

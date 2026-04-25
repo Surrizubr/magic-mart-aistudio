@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PermissionGate } from '@/components/PermissionGate';
 
 const categoryColors: Record<string, string> = {
   'Grãos': 'bg-accent text-accent-foreground',
@@ -133,6 +134,7 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
   const [editAddress, setEditAddress] = useState('');
   const [editDate, setEditDate] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
+  const [showLocationGate, setShowLocationGate] = useState(false);
   
   // Export states
   const [showExportModal, setShowExportModal] = useState(false);
@@ -164,6 +166,11 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
   };
 
   const handleGeolocate = async () => {
+    setShowLocationGate(true);
+  };
+
+  const executeGeolocate = async () => {
+    setShowLocationGate(false);
     if (!navigator.geolocation) return;
     setGeoLoading(true);
     try {
@@ -424,6 +431,12 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
 
   return (
     <div className="pb-20">
+      <PermissionGate 
+        isOpen={showLocationGate} 
+        type="location" 
+        onAllow={executeGeolocate} 
+        onCancel={() => setShowLocationGate(false)} 
+      />
       <PageHeader
         title={t('history')}
         subtitle={filterDate

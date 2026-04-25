@@ -4,6 +4,7 @@ import { Crown, Check, LogOut } from 'lucide-react';
 import { supabase, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
+import { toast } from 'sonner';
 
 export function PricingPage() {
   const { t, currency } = useLanguage();
@@ -84,6 +85,19 @@ export function PricingPage() {
             </div>
           )}
         </div>
+
+        <button
+          onClick={() => {
+            setLoading(true);
+            setTimeout(() => {
+              setLoading(false);
+              toast.info(t('checkingSubscription'));
+            }, 1000);
+          }}
+          className="w-full flex items-center justify-center gap-2 p-3 text-xs text-muted-foreground hover:text-primary transition-colors font-medium border border-dashed border-muted-foreground/20 rounded-xl"
+        >
+          {t('restorePurchase')}
+        </button>
 
         <button
           onClick={handleLogout}

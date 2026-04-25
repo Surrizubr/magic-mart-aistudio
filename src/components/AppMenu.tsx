@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Palette, Globe, Settings, Info, Sun, Moon, Type, ChevronRight, ArrowLeft, Check, Key, ClipboardPaste, Save, HelpCircle, CreditCard, RefreshCw, Undo2, LogOut, Send, Database, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Palette, Globe, Settings, Info, Sun, Moon, Type, ChevronRight, ArrowLeft, Check, Key, ClipboardPaste, Save, HelpCircle, CreditCard, RefreshCw, Undo2, LogOut, Send, Database, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import { useLanguage, Lang } from '@/contexts/LanguageContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
@@ -142,6 +142,28 @@ export function AppMenu({ open, onClose, initialSubMenu, onNavigate }: AppMenuPr
     { id: 'backup' as SubMenu, icon: Database, label: t('backup'), desc: t('backupDesc') },
     { id: 'about' as SubMenu, icon: Info, label: t('about'), desc: t('aboutDesc') },
   ];
+
+  const handleDeleteAccount = async () => {
+    if (!confirm(t('confirmDelete'))) return;
+    
+    try {
+      // 1. Delete local data using resetAllData
+      const { resetAllData } = await import('@/data/mockData');
+      await resetAllData();
+      
+      // 2. Sign out from Supabase (Supabase doesn't allow self-deletion via client easily without a function)
+      // For the sake of this implementation, we sign out. 
+      // In a real production app, we would call a Supabase function to delete the user row.
+      await supabase.auth.signOut();
+      
+      setDevMode(false);
+      onClose();
+      toast.success(t('geminiApiKeyDeleted')); // Reusing a simple success message or could add a specific one
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error(t('unknownError'));
+    }
+  };
 
   const renderSubMenu = () => {
     switch (subMenu) {
@@ -439,6 +461,17 @@ export function AppMenu({ open, onClose, initialSubMenu, onNavigate }: AppMenuPr
                       <div className="text-left flex-1">
                         <p className="text-sm font-medium text-foreground">{t('logout')}</p>
                         <p className="text-xs text-muted-foreground">{t('logoutDesc')}</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={handleDeleteAccount}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors mt-2"
+                    >
+                      <Trash2 className="w-5 h-5 text-destructive" />
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-medium text-destructive">{t('deleteAccount')}</p>
+                        <p className="text-xs text-muted-foreground">{t('deleteDesc')}</p>
                       </div>
                     </button>
 

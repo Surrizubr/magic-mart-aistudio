@@ -7,6 +7,7 @@ import { ShoppingList, ShoppingListItem } from '@/types';
 import { ArrowLeft, Plus, ShoppingCart, CheckCircle, Trash2, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PermissionGate } from '@/components/PermissionGate';
 
 interface ListDetailPageProps {
   list: ShoppingList;
@@ -27,6 +28,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
   const [showStoreDialog, setShowStoreDialog] = useState(false);
   const [storeName, setStoreName] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
+  const [showLocationGate, setShowLocationGate] = useState(false);
 
   useEffect(() => {
     const updatedList: ShoppingList = {
@@ -98,6 +100,11 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
   };
 
   const handleGeoLocation = () => {
+    setShowLocationGate(true);
+  };
+
+  const executeGeoLocation = () => {
+    setShowLocationGate(false);
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -174,6 +181,12 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
 
   return (
     <div className="pb-20">
+      <PermissionGate 
+        isOpen={showLocationGate} 
+        type="location" 
+        onAllow={executeGeoLocation} 
+        onCancel={() => setShowLocationGate(false)} 
+      />
       <PageHeader
         title={list.name}
         subtitle={shoppingMode ? `${checkedCount}/${items.length} ${t('selected')}` : `${items.length} ${t('items').toLowerCase()}`}

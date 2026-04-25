@@ -48,7 +48,14 @@ const translations: Record<string, Record<Lang, string>> = {
   noAccount: { pt: 'Não tem conta?', en: "Don't have an account?", es: '¿No tienes cuenta?' },
   hasAccount: { pt: 'Já tem conta?', en: 'Already have an account?', es: '¿Ya tienes cuenta?' },
   checkingSubscription: { pt: 'Verificando assinatura...', en: 'Checking subscription...', es: 'Verificando suscripción...' },
+  restorePurchase: { pt: 'Restaurar Assinatura', en: 'Restore Subscription', es: 'Restaurar Suscripción' },
   welcomeBack: { pt: 'Bem-vindo de volta!', en: 'Welcome back!', es: '¡Bienvenido de nuevo!' },
+  locationPermissionTitle: { pt: 'Uso de Localização', en: 'Location Usage', es: 'Uso de Ubicación' },
+  locationPermissionDesc: { pt: 'A Magic Mart solicita sua localização para sugerir automaticamente o nome do mercado onde você está.', en: 'Magic Mart requests your location to automatically suggest the name of the market where you are.', es: 'Magic Mart solicita su ubicación para sugerir automáticamente el nombre del mercado donde se encuentra.' },
+  cameraPermissionTitle: { pt: 'Uso da Câmera', en: 'Camera Usage', es: 'Uso de Cámara' },
+  cameraPermissionDesc: { pt: 'A Magic Mart solicita acesso à câmera para que a IA identifique produtos automaticamente.', en: 'Magic Mart requests camera access so the AI can automatically identify products.', es: 'Magic Mart solicita acceso a la cámara para que la IA identifique productos automáticamente.' },
+  allow: { pt: 'Permitir', en: 'Allow', es: 'Permitir' },
+  notNow: { pt: 'Agora não', en: 'Not now', es: 'Ahora no' },
   confirmReset: { pt: 'Tem certeza? Isso apagará todas as listas, histórico e estoque.', en: 'Are you sure? This will delete all lists, history and stock.', es: '¿Estás seguro? Esto eliminará listas, historial y stock.' },
   confirmDelete: { pt: 'Tem certeza? Sua conta será apagada permanentemente.', en: 'Are you sure? Your account will be permanently deleted.', es: '¿Estás seguro? Tu cuenta será eliminada permanentemente.' },
   confirm: { pt: 'Confirmar', en: 'Confirm', es: 'Confirmar' },
@@ -512,38 +519,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem('app-region') === 'europe';
   });
 
-  // Detect if user is in Europe on mount
+  // Region detection removed to follow "Just-in-Time" permissions guidelines
   useEffect(() => {
+    // We no longer automatically request geolocation on startup.
+    // If needed in the future, we should add a manual setting for the user.
     const cached = localStorage.getItem('app-region');
-    if (cached) return; // already detected
-
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`,
-              { headers: { 'User-Agent': 'MagicmartAI/1.0' } }
-            );
-            const data = await res.json();
-            const country = data?.address?.country_code?.toLowerCase() || '';
-            const europeanCountries = [
-              'at','be','bg','hr','cy','cz','dk','ee','fi','fr','de','gr','hu',
-              'ie','it','lv','lt','lu','mt','nl','pl','pt','ro','sk','si','es',
-              'se','gb','no','ch','is'
-            ];
-            const inEurope = europeanCountries.includes(country);
-            localStorage.setItem('app-region', inEurope ? 'europe' : 'other');
-            setIsEurope(inEurope);
-          } catch {
-            localStorage.setItem('app-region', 'other');
-          }
-        },
-        () => {
-          localStorage.setItem('app-region', 'other');
-        },
-        { timeout: 5000 }
-      );
+    if (!cached) {
+      localStorage.setItem('app-region', 'other');
     }
   }, []);
 

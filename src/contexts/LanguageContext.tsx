@@ -446,6 +446,8 @@ const translations: Record<string, Record<Lang, string>> = {
   duplicatesIgnored: { pt: 'duplicados ignorados', en: 'duplicates ignored', es: 'duplicados ignorados' },
   allDataExists: { pt: 'Todos os itens já existem no histórico.', en: 'All items already exist in history.', es: 'Todos los ítems ya existen en el historial.' },
   csvFormatError: { pt: 'Erro no formato do arquivo CSV.', en: 'Error in CSV file format.', es: 'Error en el formato CSV.' },
+  addImportedToStockQuestion: { pt: 'Deseja adicionar os itens importados ao estoque?', en: 'Do you want to add the imported items to stock?', es: '¿Deseas añadir los artículos importados al stock?' },
+  addImportedToStockTitle: { pt: 'Atualizar Estoque', en: 'Update Stock', es: 'Actualizar Stock' },
   exportHistoryTitle: { pt: 'Exportar Histórico (CSV)', en: 'Export History (CSV)', es: 'Exportar Historial (CSV)' },
   startDate: { pt: 'Data de Início', en: 'Start Date', es: 'Fecha de Inicio' },
   endDate: { pt: 'Data de Fim', en: 'End Date', es: 'Fecha de Fin' },

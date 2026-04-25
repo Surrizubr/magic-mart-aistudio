@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
-import { getHistory, saveHistory, getLists, saveLists } from '@/data/mockData';
+import { getHistory, saveHistory, getLists, saveLists, getStock, saveStock } from '@/data/mockData';
 import { MapPin, ScanLine, Clock, Pencil, LocateFixed, AlertTriangle, Trash2, ListPlus, TrendingUp, TrendingDown, FileDown, FileUp, Search, XCircle, RotateCcw, Check } from 'lucide-react';
 import { SwipeableRow } from '@/components/SwipeableRow';
 import { Button } from '@/components/ui/button';
@@ -139,6 +139,8 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     end: new Date().toISOString().slice(0, 10) 
   });
 
+  const [pendingImportItems, setPendingImportItems] = useState<any[] | null>(null);
+
   const handleDeleteItem = (itemId: string) => {
     const allHistory = getHistory();
     const updated = allHistory.filter(h => h.id !== itemId);
@@ -244,7 +246,24 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
       const baseDate = dateStr.includes('T') ? dateStr : `${dateStr}T12:00`;
       const date = new Date(baseDate);
       if (isNaN(date.getTime())) return t('invalidDate');
-      return date.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { day: '2-digit', month: 'long' });
+      
+      const locale = lang === 'en' ? 'en-US' : (lang === 'es' ? 'es-ES' : 'pt-BR');
+      const day = date.getDate();
+      const month = date.toLocaleDateString(locale, { month: 'long' });
+      const weekday = date.toLocaleDateString(locale, { weekday: 'long' });
+      
+      // Capitalize properly: "Abril", "Sexta-Feira"
+      const monthCap = month.charAt(0).toUpperCase() + month.slice(1);
+      
+      // For Portuguese weekdays like "sexta-feira", capitalize both parts if requested
+      const weekdayCap = weekday.split('-').map(part => 
+        part.charAt(0).toUpperCase() + part.slice(1)
+      ).join('-');
+      
+      if (lang === 'pt-BR' || lang === 'es-ES') {
+        return `${day} de ${monthCap} (${weekdayCap})`;
+      }
+      return `${monthCap} ${day} (${weekdayCap})`;
     } catch {
       return t('invalidDate');
     }
@@ -291,19 +310,17 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
         const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
         if (lines.length < 2) throw new Error(t('invalidFile'));
 
-        const all = getHistory();
-        let importedCount = 0;
+        const allHistory = getHistory();
+        const newItems: any[] = [];
         let skippedCount = 0;
 
-        // Simple CSV parser that handles basic quotes
         for (let i = 1; i < lines.length; i++) {
-          // regex to split by comma but ignore commas inside quotes
           const cols = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
           const cleanCols = cols.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"'));
 
@@ -312,7 +329,7 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
           const [date, store, product, category, qty, price, total] = cleanCols;
 
           // Deduplication check
-          const exists = all.some(h => 
+          const exists = allHistory.some(h => 
             h.purchase_date === date && 
             h.store_name === store && 
             h.product_name === product && 
@@ -320,7 +337,7 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
           );
 
           if (!exists) {
-            all.push({
+            newItems.push({
               id: crypto.randomUUID(),
               purchase_date: date,
               store_name: store,
@@ -331,17 +348,13 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
               total_price: parseFloat(total),
               scanned: false
             });
-            importedCount++;
           } else {
             skippedCount++;
           }
         }
 
-        if (importedCount > 0) {
-          saveHistory(all);
-          setHistoryData(all);
-          toast.success(`${importedCount} ${t('importSuccess')}${skippedCount > 0 ? ` (${skippedCount} ${t('duplicatesIgnored')})` : ''}`);
-          setTimeout(() => window.location.reload(), 1000);
+        if (newItems.length > 0) {
+          setPendingImportItems(newItems);
         } else if (skippedCount > 0) {
           toast.info(t('allDataExists'));
         } else {
@@ -354,6 +367,44 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
     };
     reader.readAsText(file);
     e.target.value = ''; // Reset input
+  };
+
+  const confirmImport = async (addToStock: boolean) => {
+    if (!pendingImportItems) return;
+    
+    const allHistory = getHistory();
+    const updatedHistory = [...allHistory, ...pendingImportItems];
+    await saveHistory(updatedHistory);
+
+    if (addToStock) {
+      const stock = getStock();
+      pendingImportItems.forEach(item => {
+        const existingStock = stock.find(s => s.product_name.toLowerCase() === item.product_name.toLowerCase());
+        if (existingStock) {
+          existingStock.quantity += item.quantity;
+          existingStock.last_price = item.price;
+          existingStock.last_purchase = item.purchase_date;
+        } else {
+          stock.push({
+            id: crypto.randomUUID(),
+            product_name: item.product_name,
+            category: item.category,
+            quantity: item.quantity,
+            min_quantity: 0,
+            unit: 'un',
+            last_price: item.price,
+            last_purchase: item.purchase_date,
+            is_scanned: false
+          });
+        }
+      });
+      await saveStock(stock);
+    }
+
+    setPendingImportItems(null);
+    setHistoryData(updatedHistory);
+    toast.success(`${pendingImportItems.length} ${t('importSuccess')}`);
+    setTimeout(() => window.location.reload(), 1000);
   };
 
   return (
@@ -722,6 +773,29 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
           <DialogFooter className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setShowExportModal(false)}>{t('cancelBtn')}</Button>
             <Button className="flex-1 gradient-primary text-primary-foreground border-0" onClick={handleExportCSV}>{t('export')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stock Confirmation Dialog */}
+      <Dialog open={!!pendingImportItems} onOpenChange={(open) => !open && setPendingImportItems(null)}>
+        <DialogContent className="max-w-[90vw] rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">{t('addImportedToStockTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-foreground">
+              {t('addImportedToStockQuestion')}
+            </p>
+            {pendingImportItems && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {pendingImportItems.length} {t('items')}
+              </p>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => confirmImport(false)}>{t('no')}</Button>
+            <Button className="flex-1" onClick={() => confirmImport(true)}>{t('confirm')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -626,10 +626,13 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
                           </button>
                         </div>
                         {groupVariations[key] !== undefined && (
-                          <div className={`mt-1 flex items-center flex-wrap gap-1 text-[12px] font-bold ${groupVariations[key] > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
-                            {groupVariations[key] > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                          <div className={`mt-1 flex items-center flex-wrap gap-1 text-[12px] font-bold ${groupVariations[key] > 0 ? 'text-destructive' : (groupVariations[key] < 0 ? 'text-emerald-600' : 'text-muted-foreground')}`}>
+                            {groupVariations[key] > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (groupVariations[key] < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />)}
                             <span>
-                              {t('thisPurchaseWas')} {Math.abs(groupVariations[key]).toFixed(1)}% {groupVariations[key] > 0 ? t('expensiveLabel') : t('cheaperLabel')} {t('thanPrevious')}
+                              {groupVariations[key] === 0 
+                                ? t('averagePurchase')
+                                : `${t('thisPurchaseWas')} ${Math.abs(groupVariations[key]).toFixed(1)}% ${groupVariations[key] > 0 ? t('expensiveLabel') : t('cheaperLabel')} ${t('thanPrevious')}`
+                              }
                             </span>
                           </div>
                         )}

@@ -150,7 +150,9 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
 
       const geminiApiKey = localStorage.getItem('gemini-api-key') || '';
       if (!geminiApiKey) {
-        throw new Error(t('missingApiKeyError'));
+        setStep('capture');
+        setError('API_KEY_ERROR');
+        return;
       }
 
       const resultData = await analyzeWithGemini(compressedImgs, RECEIPT_PROMPT, geminiApiKey);
@@ -214,9 +216,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       setStep('results');
     } catch (err: any) {
       console.error('AI analysis error:', err);
-      const msg = err.message || t('analysisError');
-      setError(msg);
-      toast.error(msg);
+      setError('API_KEY_ERROR');
       setStep('capture');
     }
   };
@@ -1006,7 +1006,28 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       />
 
       <div className="p-4 space-y-4">
-        {error && (
+        {error === 'API_KEY_ERROR' ? (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3"
+          >
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-800 font-semibold">{t('scannerApiKeyWarning')}</p>
+              <button
+                onClick={() => onOpenMenu?.()} 
+                className="text-xs text-amber-900 font-bold mt-1 underline underline-offset-2 hover:opacity-80 transition-opacity flex items-center gap-1"
+              >
+                <Settings className="w-3 h-3" />
+                {t('scannerGoToSettings')}
+              </button>
+            </div>
+            <button onClick={() => setError(null)} className="text-amber-400 hover:text-amber-600">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        ) : error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

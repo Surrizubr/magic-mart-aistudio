@@ -59,6 +59,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   const [images, setImages] = useState<string[]>([]);
   const [progressMsg, setProgressMsg] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
+  const [trialCount, setTrialCount] = useState(0);
   const [dateError, setDateError] = useState(false);
   const [result, setResult] = useState<AIReceiptResult | null>(null);
   const [saved, setSaved] = useState(false);
@@ -73,6 +74,8 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
     setStep('capture');
     setImages([]);
     setProgressMsg('');
+    setProgressPercent(0);
+    setTrialCount(0);
     setResult(null);
     setSaved(false);
     setEditingItem(null);
@@ -136,7 +139,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
     });
   };
 
-  const processImages = async (imgs: string[]) => {
+  const processImages = async (imgs: string[], isAutoRetry = false) => {
     setStep('processing');
     setError(null);
     setProgressPercent(0);
@@ -244,12 +247,25 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
         notes: resultData.notes
       };
 
+      setTrialCount(0);
       setResult(finalResult);
       setStep('results');
     } catch (err: any) {
       console.error('AI analysis error:', err);
-      setError('API_KEY_ERROR');
-      setStep('capture');
+      
+      if (!isAutoRetry && trialCount !== 2) {
+        setTrialCount(1);
+        await new Promise(r => setTimeout(r, 1000));
+        processImages(imgs, true);
+      } else if (isAutoRetry) {
+        setTrialCount(2);
+        setError(t('errorNewPhoto'));
+        setStep('capture');
+      } else {
+        setTrialCount(0);
+        setError('API_KEY_ERROR');
+        setStep('capture');
+      }
     }
   };
 
@@ -687,7 +703,14 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
             <Loader2 className="w-12 h-12 text-primary" />
           </motion.div>
           <div className="w-full max-w-xs space-y-3">
-            <Progress value={progressPercent} className="h-3" />
+            <div className="relative">
+              <Progress value={progressPercent} className="h-3" />
+              {trialCount === 1 && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-6 bg-amber-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold shadow-sm">
+                  !
+                </div>
+              )}
+            </div>
             <p className="text-sm font-medium text-foreground text-center">{progressMsg}</p>
             <p className="text-xs text-muted-foreground text-center">
               {progressPercent}% {t('completedPercent')}

@@ -461,6 +461,7 @@ const translations: Record<string, Record<Lang, string>> = {
   endDate: { pt: 'Data de Fim', en: 'End Date', es: 'Fecha de Fin' },
   exportHint: { pt: 'O arquivo exportado pode ser aberto no Excel, Google Sheets ou importado de volta.', en: 'The exported file can be opened in Excel, Google Sheets or imported back.', es: 'El archivo exportado se puede abrir en Excel, Google Sheets o importar de nuevo.' },
   scannerApiKeyWarning: { pt: 'Algo está errado com sua chave API Gemini.', en: 'Something is wrong with your Gemini API key.', es: 'Algo está mal con tu clave API Gemini.' },
+  errorNewPhoto: { pt: 'Houve um problema na análise. Por favor, tire outra foto com melhor foco e enquadrando todos os itens.', en: 'There was a problem with the analysis. Please take another photo with better focus and framing all items.', es: 'Hubo un problema con el análisis. Por favor, toma otra foto con mejor enfoque y enmarcando todos los ítems.' },
   averagePurchase: { pt: 'Esta compra esteve na média das anteriores.', en: 'This purchase was in line with previous ones.', es: 'Esta compra estuvo en el promedio de las anteriores.' },
 };
 

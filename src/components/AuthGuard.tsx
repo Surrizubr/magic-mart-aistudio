@@ -30,7 +30,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // 3. Subscription Check Finished (Redirect ONLY if confirmed inactive)
   // We prioritize entering the app directly (children).
   // If subLoading is finished and status is not active/expiring, we redirect.
-  if (!subLoading && !devMode && status !== 'active' && status !== 'expiring') {
+  // Note: We check user exists to avoid redirecting during auth transitions.
+  if (!subLoading && user && !devMode && status !== 'active' && status !== 'expiring') {
     return <PricingPage />;
   }
 

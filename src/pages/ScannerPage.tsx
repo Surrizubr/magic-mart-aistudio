@@ -996,7 +996,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium text-card-foreground">{item.product_name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="bg-secondary px-1.5 py-0.5 rounded text-[10px] font-medium">{item.category}</span>
+                          <span className="bg-secondary px-1.5 py-0.5 rounded text-[10px] font-medium">{t(item.category)}</span>
                           <span>{item.quantity} {item.unit}</span>
                           <span>× {fc(item.unit_price)}</span>
                         </div>

@@ -777,7 +777,7 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
             >
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">{item.product_name}</p>
-                <p className="text-xs text-muted-foreground">{item.category} · {fc(item.price)}/{item.unit}</p>
+                <p className="text-xs text-muted-foreground">{t(item.category)} · {fc(item.price)}/{item.unit}</p>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-full bg-accent flex items-center justify-center">

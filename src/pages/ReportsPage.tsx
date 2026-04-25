@@ -133,7 +133,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
   const categoryData = Object.entries(categoryTotals)
     .sort((a, b) => b[1] - a[1])
     .map(([name, value], i) => ({
-      name, value,
+      name: t(name), value,
       fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
     }));
   const catTotal = categoryData.reduce((s, c) => s + c.value, 0);
@@ -255,7 +255,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 <div key={c.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.fill }} />
-                    <span className="text-sm text-foreground">{c.name}</span>
+                    <span className="text-sm text-foreground">{t(c.name)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-bold text-foreground">{c.percent}%</span>

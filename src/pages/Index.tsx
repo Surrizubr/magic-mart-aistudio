@@ -19,15 +19,7 @@ import { TabId } from '@/types';
 
 const Index = () => {
   const { info } = useSubscription();
-  const [navStack, setNavStack] = useState<TabId[]>(() => {
-    const saved = localStorage.getItem('nav_stack');
-    try {
-      const parsed = saved ? JSON.parse(saved) : ['home'];
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : ['home'];
-    } catch {
-      return ['home'];
-    }
-  });
+  const [navStack, setNavStack] = useState<TabId[]>(['home']);
   const [navKeys, setNavKeys] = useState<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuInitialSubMenu, setMenuInitialSubMenu] = useState<any>(null);

@@ -201,7 +201,7 @@ export function StockPage({ onBack }: StockPageProps) {
                       </div>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent text-accent-foreground flex items-center gap-1`}>
-                          {categoryIcons[s.category]?.icon || '🛒'} {t(categoryIcons[s.category]?.key || 'others')}
+                          {categoryIcons[s.category]?.icon || '🛒'} {t(categoryIcons[s.category]?.key || s.category)}
                         </span>
                         <span className="text-xs text-muted-foreground">{s.quantity.toLocaleString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { maximumFractionDigits: 3 })} {t(s.unit)}</span>
                       </div>

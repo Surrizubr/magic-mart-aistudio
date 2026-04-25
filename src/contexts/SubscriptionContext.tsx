@@ -30,20 +30,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const { devMode } = useDevMode();
   const [status, setStatus] = useState<SubStatus>(() => {
     if (devMode) return 'active';
-    // Use user check inside useEffect or a more robust initialization
-    return 'inactive';
+    // Try to get from localStorage immediately if possible
+    // Note: user might not be in state yet, but we can look for any active session
+    // Or just wait for the first check. For now, let's keep it safe.
+    return 'active'; // Default to active during initial loading to prevent PricingPage flicker
   });
   const [loading, setLoading] = useState(true);
 
-  // Separate effect for initial status from localStorage once user is known
+  // Sync status if devMode changes
   useEffect(() => {
-    if (user && !devMode) {
-      const cached = localStorage.getItem(`sub_status_${user.id}`);
-      if (cached === 'active') {
-        setStatus('active');
-      }
-    }
-  }, [user, devMode]);
+    if (devMode) setStatus('active');
+  }, [devMode]);
+
   const [info, setInfo] = useState<SubscriptionInfo | null>(null);
   const [daysUntilExpiry, setDaysUntilExpiry] = useState(0);
 

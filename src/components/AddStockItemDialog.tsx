@@ -89,7 +89,7 @@ export function AddStockItemDialog({ open, onOpenChange, onAdd }: AddStockItemDi
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {categories.map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c}>{t(c)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -100,7 +100,7 @@ export function AddStockItemDialog({ open, onOpenChange, onAdd }: AddStockItemDi
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {units.map(u => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                    <SelectItem key={u} value={u}>{t(u)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

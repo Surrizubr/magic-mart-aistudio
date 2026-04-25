@@ -274,7 +274,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                     {item.estimated_price > 0 && ` · ${fc(item.estimated_price)}`}
                   </p>
                 </div>
-                <span className="text-xs text-muted-foreground mr-1">{item.category}</span>
+                <span className="text-xs text-muted-foreground mr-1">{t(item.category)}</span>
                 <button
                   onClick={e => { e.stopPropagation(); removeItem(item.id); }}
                   className="shrink-0 w-7 h-7 rounded-full bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors"

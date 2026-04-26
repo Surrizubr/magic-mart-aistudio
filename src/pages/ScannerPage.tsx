@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
-import { Camera, Images, X, Loader2, Check, ArrowLeft, Package, MapPin, Trash2, AlertTriangle, Edit2, Plus, History, Eye, Settings, Info } from 'lucide-react';
+import { Camera, Images, X, Loader2, Check, ArrowLeft, Package, MapPin, Trash2, AlertTriangle, Edit2, Plus, History, Eye, Settings, Info, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { analyzeWithGemini, testGeminiConnection, RECEIPT_PROMPT } from '@/services/geminiService';
@@ -11,6 +11,7 @@ import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { recalculateAllConsumptionRates } from '@/lib/consumptionCalculator';
 import { getHistory, saveHistory, getStock, saveStock } from '@/data/mockData';
 import { getCategoryForProduct, saveProductMapping } from '@/lib/categoryMappings';
+import { PermissionGate } from '@/components/PermissionGate';
 
 type ScanMode = 'choose' | 'single' | 'multi' | 'history';
 type ScanStep = 'capture' | 'processing' | 'results';
@@ -67,6 +68,8 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   const [result, setResult] = useState<AIReceiptResult | null>(null);
   const [saved, setSaved] = useState(false);
   const [showDateConfirm, setShowDateConfirm] = useState(false);
+  const [showLocationGate, setShowLocationGate] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [originalDiscounts, setOriginalDiscounts] = useState<Map<string, { discount_amount: number; discounted_price: number; discount: number }>>(new Map());
@@ -446,6 +449,48 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   }, [mode]);
 
 
+  const handleGeoLocation = () => {
+    setShowLocationGate(true);
+  };
+
+  const executeGeoLocation = () => {
+    setShowLocationGate(false);
+    if (!result) return;
+    
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US' } }
+          );
+          const data = await res.json();
+          const addr = data.address || {};
+          const road = addr.road || addr.pedestrian || addr.street || '';
+          const number = addr.house_number || '';
+          const shop = addr.shop || addr.supermarket || addr.building || addr.commercial || '';
+          let name = '';
+          if (shop) name = shop + ' - ';
+          name += road;
+          if (number) name += ', ' + number;
+          if (!name.trim()) name = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+          setResult({ ...result, store_name: name.trim() });
+          toast.success(t('locationObtained'));
+        } catch {
+          setResult({ ...result, store_name: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
+          toast.info(t('coordsSaved'));
+        }
+        setGeoLoading(false);
+      },
+      () => {
+        setGeoLoading(false);
+        toast.error(t('locationError'));
+      },
+      { timeout: 10000 }
+    );
+  };
+
   const updateItem = (id: string, field: keyof ReceiptItem, value: string | number) => {
     if (!result) return;
     const newItems = result.items.map(item => {
@@ -521,6 +566,12 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   if (mode === 'choose') {
     return (
       <div className="pb-20">
+        <PermissionGate 
+          isOpen={showLocationGate} 
+          type="location" 
+          onAllow={executeGeoLocation} 
+          onCancel={() => setShowLocationGate(false)} 
+        />
         <PageHeader title={t('scan')} subtitle={t('digitalizeReceipts')} onBack={onBack} />
         <div className="p-4 space-y-4">
           {(() => {
@@ -711,61 +762,6 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
           )}
         </div>
 
-        {/* Date confirmation dialog */}
-        <AnimatePresence>
-          {showDateConfirm && result && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-              onClick={() => setShowDateConfirm(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={e => e.stopPropagation()}
-                className="bg-card rounded-xl shadow-elevated p-6 w-full max-w-sm space-y-4"
-              >
-                <div className="flex items-center gap-2 text-primary">
-                  <Calendar className="w-5 h-5" />
-                  <h3 className="text-sm font-bold text-foreground">{t('confirmDateTitle')}</h3>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('confirmDateDesc')}
-                </p>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('purchaseDateLabel')}</label>
-                  <input
-                    type="date"
-                    value={result.date}
-                    onChange={e => setResult({ ...result, date: e.target.value })}
-                    className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:ring-2 ring-primary/30"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowDateConfirm(false)}
-                  >
-                    {t('cancel')}
-                  </Button>
-                  <Button
-                    className="flex-1 gradient-primary text-primary-foreground border-0"
-                    onClick={performSave}
-                  >
-                    {t('confirm')}
-                  </Button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Confirmation dialog */}
         <AnimatePresence>
           {confirmDeleteId && (
@@ -853,6 +849,12 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
 
     return (
       <div className="pb-20">
+        <PermissionGate 
+          isOpen={showLocationGate} 
+          type="location" 
+          onAllow={executeGeoLocation} 
+          onCancel={() => setShowLocationGate(false)} 
+        />
         <PageHeader
           title={t('results')}
           subtitle={`${result.items.length} ${t('foundItemsSubtitle')}`}
@@ -868,6 +870,14 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
                 onChange={e => setResult({ ...result, store_name: e.target.value })}
                 className="text-sm font-semibold text-card-foreground bg-transparent outline-none flex-1 border-b border-transparent focus:border-primary/30"
               />
+              <button
+                onClick={handleGeoLocation}
+                disabled={geoLoading}
+                className="p-2 rounded-lg bg-accent text-primary hover:bg-accent/80 transition-colors disabled:opacity-50"
+                title={t('useLocation')}
+              >
+                {geoLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+              </button>
             </div>
 
             {result.store_address && (
@@ -1201,6 +1211,61 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
             </Button>
           </div>
         </div>
+
+        {/* Date confirmation dialog */}
+        <AnimatePresence>
+          {showDateConfirm && result && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+              onClick={() => setShowDateConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-card rounded-xl shadow-elevated p-6 w-full max-w-sm space-y-4"
+              >
+                <div className="flex items-center gap-2 text-primary">
+                  <Calendar className="w-5 h-5" />
+                  <h3 className="text-sm font-bold text-foreground">{t('confirmDateTitle')}</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('confirmDateDesc')}
+                </p>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('purchaseDateLabel')}</label>
+                  <input
+                    type="date"
+                    value={result.date}
+                    onChange={e => setResult({ ...result, date: e.target.value })}
+                    className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:ring-2 ring-primary/30"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowDateConfirm(false)}
+                  >
+                    {t('cancel')}
+                  </Button>
+                  <Button
+                    className="flex-1 gradient-primary text-primary-foreground border-0"
+                    onClick={performSave}
+                  >
+                    {t('confirm')}
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
     );
@@ -1209,6 +1274,12 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   // Capture screen
   return (
     <div className="pb-20">
+      <PermissionGate 
+        isOpen={showLocationGate} 
+        type="location" 
+        onAllow={executeGeoLocation} 
+        onCancel={() => setShowLocationGate(false)} 
+      />
       <PageHeader
         title={mode === 'single' ? t('singlePhoto') : t('multiPhoto')}
         subtitle={mode === 'single' ? t('takePhotoSub') : `${images.length} ${t('photosAddedSub')}`}

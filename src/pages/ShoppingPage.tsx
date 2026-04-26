@@ -151,7 +151,7 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
         setGeoLoading(false);
         toast.error(t('locationError'));
       },
-      { enableHighAccuracy: true }
+      { timeout: 10000 }
     );
   };
 

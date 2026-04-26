@@ -135,7 +135,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
         setGeoLoading(false);
         toast.error(t('locationError'));
       },
-      { enableHighAccuracy: true }
+      { timeout: 10000 }
     );
   };
 

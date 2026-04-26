@@ -33,6 +33,7 @@ interface AIReceiptResult {
   store_address?: string;
   establishment_type: 'supermarket' | 'restaurant' | 'transport' | 'maintenance';
   date: string;
+  extracted_date?: string;
   items: ReceiptItem[];
   receipt_total: number;
   items_sum: number;
@@ -277,6 +278,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
         store_address: resultData.store_address,
         establishment_type: resultData.establishment_type || 'supermarket',
         date: resultData.date || initialDate || new Date().toISOString().slice(0, 10),
+        extracted_date: resultData.date,
         items,
         receipt_total: resultData.receipt_total || 0,
         items_sum: itemsSum,
@@ -971,15 +973,28 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
                   <span className="text-xs font-bold text-primary">
                     {new Date(result.date + 'T12:00:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR')}
                   </span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setResult({ ...result, date: new Date().toISOString().slice(0, 10) })}
-                    className="h-6 px-2 text-[10px] font-bold text-primary hover:bg-primary/10"
-                  >
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {t('today')}
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {result.extracted_date && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setResult({ ...result, date: result.extracted_date! })}
+                        className={`h-6 px-2 text-[10px] font-bold transition-colors ${result.date === result.extracted_date ? 'text-green-600 bg-green-50' : 'text-primary hover:bg-primary/10'}`}
+                      >
+                        <History className="w-3 h-3 mr-1" />
+                        {t('receiptDate')}
+                      </Button>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setResult({ ...result, date: new Date().toISOString().slice(0, 10) })}
+                      className={`h-6 px-2 text-[10px] font-bold transition-colors ${result.date === new Date().toISOString().slice(0, 10) ? 'text-green-600 bg-green-50' : 'text-primary hover:bg-primary/10'}`}
+                    >
+                      <Calendar className="w-3 h-3 mr-1" />
+                      {t('today')}
+                    </Button>
+                  </div>
                 </div>
               </div>
               <input

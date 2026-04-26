@@ -202,6 +202,7 @@ const translations: Record<string, Record<Lang, string>> = {
   aiStep6: { pt: 'Extraindo itens comprados, quantidades e preços', en: 'Extracting items, quantities and prices', es: 'Extrayendo ítems, cantidades y precios' },
   aiStep7: { pt: 'Consolidando valores', en: 'Consolidating values', es: 'Consolidando valores' },
   today: { pt: 'Data de hoje', en: 'Today', es: 'Hoy' },
+  receiptDate: { pt: 'Data do cupom', en: 'Receipt date', es: 'Fecha del cupón' },
   itemsCount: { pt: 'Total de itens no cupom', en: 'Total items on receipt', es: 'Total de ítems en el cupón' },
   addItem: { pt: 'Incluir', en: 'Include', es: 'Incluir' },
   noneFoundMsg: { pt: 'Nenhum item encontrado no cupom.', en: 'No items found on the receipt.', es: 'No se encontraron ítems en el cupón.' },

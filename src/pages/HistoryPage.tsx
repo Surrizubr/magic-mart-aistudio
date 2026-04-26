@@ -158,6 +158,7 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
   });
 
   const [editingItemCategoryId, setEditingItemCategoryId] = useState<string | null>(null);
+  const [pendingImportItems, setPendingImportItems] = useState<any[] | null>(null);
 
   const handleUpdateCategory = (itemId: string, newCategory: string) => {
     const allHistory = getHistory();

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
 import { getHistory } from '@/data/mockData';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { TrendingUp, BarChart3, ShoppingCart, Clock, Calendar, MapPin, ExternalLink } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from 'recharts';
+import { TrendingUp, BarChart3, ShoppingCart, Clock, Calendar, MapPin, ExternalLink, PieChart as PieChartIcon, Tag, Store, Bus, Wrench } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -198,7 +198,10 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         {/* Monthly Evolution Bar Chart */}
         {monthlySpending.length > 0 && (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-1">{t('monthlyEvolution')}</h3>
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground">{t('monthlyEvolution')}</h3>
+            </div>
             <p className="text-xs text-muted-foreground mb-3">{t('lastMonths').replace('{count}', String(monthlySpending.length))}</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart 
@@ -211,7 +214,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
               >
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(160,10%,45%)' }} axisLine={true} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: 'hsl(160,10%,45%)' }} axisLine={true} tickLine={false} tickFormatter={(v) => fc(v)} />
-                <Tooltip 
+                <RechartsTooltip 
                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
                   formatter={(v: number) => [fc(v), t('spending')]} 
@@ -243,7 +246,10 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         {/* Donut Chart */}
         {enrichedCategories.length > 0 ? (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-4">{t('spendingByCategory')}</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <PieChartIcon className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground">{t('spendingByCategory')}</h3>
+            </div>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={enrichedCategories} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2} dataKey="value">
@@ -251,7 +257,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                     <Cell key={i} fill={entry.fill} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v: number) => [`${fc(v)}`, '']} />
+                <RechartsTooltip formatter={(v: number) => [`${fc(v)}`, '']} />
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-4 space-y-2">
@@ -278,7 +284,10 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         {/* Top Products */}
         {topProducts.length > 0 ? (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">{t('mostPurchased')}</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground">{t('mostPurchased')}</h3>
+            </div>
             <div className="max-h-60 overflow-y-auto pr-2 scrollbar-thin">
               {topProducts.map(([name, count], i) => (
                 <div key={name} className="flex items-center justify-between py-2.5 border-b border-border/50 last:border-0">
@@ -300,7 +309,10 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         {/* Most Visited Stores */}
         {topStores.length > 0 && (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">{t('mostVisitedStores')}</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <Store className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground">{t('mostVisitedStores')}</h3>
+            </div>
             <div className="max-h-60 overflow-y-auto pr-2 scrollbar-thin">
               {topStores.map(([name, data], i) => (
                 <div key={name} className="flex items-center justify-between py-2.5 border-b border-border/50 last:border-0">
@@ -348,7 +360,10 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
 
           return (
             <div className="bg-card rounded-xl border border-border p-4">
-              <h3 className="text-sm font-bold text-foreground mb-4">{t('transportMonthly')}</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <Bus className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">{t('transportMonthly')}</h3>
+              </div>
               <div className="space-y-2">
                 {data.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
@@ -378,7 +393,10 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
 
           return (
             <div className="bg-card rounded-xl border border-border p-4">
-              <h3 className="text-sm font-bold text-foreground mb-4">{t('maintenanceYearly')}</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <Wrench className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">{t('maintenanceYearly')}</h3>
+              </div>
               <div className="space-y-2">
                 {data.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">

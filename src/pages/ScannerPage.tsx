@@ -10,7 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { recalculateAllConsumptionRates } from '@/lib/consumptionCalculator';
 import { getHistory, saveHistory, getStock, saveStock } from '@/data/mockData';
-import { getCategoryForProduct } from '@/lib/categoryMappings';
+import { getCategoryForProduct, saveProductMapping } from '@/lib/categoryMappings';
 
 type ScanMode = 'choose' | 'single' | 'multi' | 'history';
 type ScanStep = 'capture' | 'processing' | 'results';
@@ -312,83 +312,90 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   const handleSave = () => {
     if (!result) return;
     
-    // Validate date
-    if (!result.date || result.date.trim() === '' || isNaN(new Date(result.date + 'T12:00:00').getTime())) {
-      setDateError(true);
-      return;
-    }
-    setDateError(false);
+    try {
+      // Validate date
+      if (!result.date || result.date.trim() === '' || isNaN(new Date(result.date + 'T12:00:00').getTime())) {
+        setDateError(true);
+        toast.error(t('fillDateWarning'));
+        return;
+      }
+      setDateError(false);
 
-    const receiptId = `receipt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    
-    // Save to purchase_history
-    let history = getHistory();
-    
-    // If we are updating an existing purchase from history page
-    if (initialDate && initialStore) {
-      const oldItems = history.filter(h => h.purchase_date === initialDate && h.store_name === initialStore);
+      const receiptId = `receipt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       
-      // "Undo" the previous stock additions
-      const stock = getStock();
-      oldItems.forEach(oldItem => {
-        const stockItem = stock.find(s => s.product_name.toLowerCase() === oldItem.product_name.toLowerCase());
-        if (stockItem) {
-          stockItem.quantity = Math.max(0, stockItem.quantity - oldItem.quantity);
-        }
-      });
-      saveStock(stock);
-
-      history = history.filter(h => !(h.purchase_date === initialDate && h.store_name === initialStore));
-    }
-
-    result.items.forEach(item => {
-      // Learn the categorization for future use
-      saveProductMapping(item.product_name, item.category);
+      // Save to purchase_history
+      let history = getHistory();
       
-      history.push({
-        id: `h_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        product_name: item.product_name,
-        category: item.category,
-        quantity: item.quantity,
-        price: item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price,
-        total_price: item.discount_amount > 0 ? item.discounted_price : item.total_price,
-        store_name: result.store_name,
-        purchase_date: result.date,
-        scanned: true,
-        receipt_id: receiptId,
-      });
-    });
-    saveHistory(history);
+      // If we are updating an existing purchase from history page
+      if (initialDate && initialStore) {
+        const oldItems = history.filter(h => h.purchase_date === initialDate && h.store_name === initialStore);
+        
+        // "Undo" the previous stock additions
+        const stock = getStock();
+        oldItems.forEach(oldItem => {
+          const stockItem = stock.find(s => s.product_name.toLowerCase() === oldItem.product_name.toLowerCase());
+          if (stockItem) {
+            stockItem.quantity = Math.max(0, stockItem.quantity - oldItem.quantity);
+          }
+        });
+        saveStock(stock);
 
-    // Save to stock_items
-    if (result.establishment_type === 'supermarket') {
-      const existingStock: any[] = getStock();
+        history = history.filter(h => !(h.purchase_date === initialDate && h.store_name === initialStore));
+      }
+
       result.items.forEach(item => {
-        const existing = existingStock.find(s => s.product_name.toLowerCase() === item.product_name.toLowerCase());
-        if (existing) {
-          existing.quantity += item.quantity;
-        } else {
-          existingStock.push({
-            id: `stock_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-            product_name: item.product_name,
-            category: item.category,
-            quantity: item.quantity,
-            unit: item.unit,
-            min_quantity: 1,
-            daily_consumption_rate: 0.1,
-            status: 'ok',
-            last_price: item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price,
-            receipt_id: receiptId,
-          });
-        }
+        // Learn the categorization for future use
+        saveProductMapping(item.product_name, item.category);
+        
+        history.push({
+          id: `h_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          product_name: item.product_name,
+          category: item.category,
+          quantity: item.quantity,
+          price: item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price,
+          total_price: item.discount_amount > 0 ? item.discounted_price : item.total_price,
+          store_name: result.store_name,
+          purchase_date: result.date,
+          scanned: true,
+          receipt_id: receiptId,
+        });
       });
-      saveStock(existingStock);
+      saveHistory(history);
+
+      // Save to stock_items
+      if (result.establishment_type === 'supermarket') {
+        const existingStock: any[] = getStock();
+        result.items.forEach(item => {
+          const existing = existingStock.find(s => s.product_name.toLowerCase() === item.product_name.toLowerCase());
+          if (existing) {
+            existing.quantity += item.quantity;
+          } else {
+            existingStock.push({
+              id: `stock_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+              product_name: item.product_name,
+              category: item.category,
+              quantity: item.quantity,
+              unit: item.unit,
+              min_quantity: 1,
+              daily_consumption_rate: 0.1,
+              status: 'ok',
+              last_price: item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price,
+              receipt_id: receiptId,
+            });
+          }
+        });
+        saveStock(existingStock);
+      }
+
+      // Recalculate consumption rates based on purchase history
+      recalculateAllConsumptionRates();
+
+      setSaved(true);
+      toast.success(t('saveSuccessful'));
+    } catch (err: any) {
+      console.error('Error in handleSave:', err);
+      toast.error('Ocorreu um erro ao salvar o recibo.');
     }
-
-    // Recalculate consumption rates based on purchase history
-    recalculateAllConsumptionRates();
-
-    setSaved(true);
   };
 
   const deleteReceipt = (receiptId: string) => {

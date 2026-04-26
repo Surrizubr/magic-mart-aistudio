@@ -66,6 +66,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   const [dateError, setDateError] = useState(false);
   const [result, setResult] = useState<AIReceiptResult | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showDateConfirm, setShowDateConfirm] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [originalDiscounts, setOriginalDiscounts] = useState<Map<string, { discount_amount: number; discounted_price: number; discount: number }>>(new Map());
@@ -312,14 +313,27 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
   const handleSave = () => {
     if (!result) return;
     
+    // Validate date
+    if (!result.date || result.date.trim() === '' || isNaN(new Date(result.date + 'T12:00:00').getTime())) {
+      // If date is missing or invalid, default to today
+      setResult({ ...result, date: new Date().toISOString().slice(0, 10) });
+    }
+    
+    setShowDateConfirm(true);
+  };
+
+  const performSave = () => {
+    if (!result) return;
+    
     try {
-      // Validate date
+      // Final date validation
       if (!result.date || result.date.trim() === '' || isNaN(new Date(result.date + 'T12:00:00').getTime())) {
         setDateError(true);
         toast.error(t('fillDateWarning'));
         return;
       }
       setDateError(false);
+      setShowDateConfirm(false);
 
       const receiptId = `receipt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       
@@ -696,6 +710,61 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
             ))
           )}
         </div>
+
+        {/* Date confirmation dialog */}
+        <AnimatePresence>
+          {showDateConfirm && result && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+              onClick={() => setShowDateConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-card rounded-xl shadow-elevated p-6 w-full max-w-sm space-y-4"
+              >
+                <div className="flex items-center gap-2 text-primary">
+                  <Calendar className="w-5 h-5" />
+                  <h3 className="text-sm font-bold text-foreground">{t('confirmDateTitle')}</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('confirmDateDesc')}
+                </p>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('purchaseDateLabel')}</label>
+                  <input
+                    type="date"
+                    value={result.date}
+                    onChange={e => setResult({ ...result, date: e.target.value })}
+                    className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm outline-none focus:ring-2 ring-primary/30"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowDateConfirm(false)}
+                  >
+                    {t('cancel')}
+                  </Button>
+                  <Button
+                    className="flex-1 gradient-primary text-primary-foreground border-0"
+                    onClick={performSave}
+                  >
+                    {t('confirm')}
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Confirmation dialog */}
         <AnimatePresence>

@@ -501,6 +501,8 @@ const translations: Record<string, Record<Lang, string>> = {
   errorNewPhoto: { pt: 'Houve um problema na análise. Por favor, tire outra foto com melhor foco e enquadrando todos os itens.', en: 'There was a problem with the analysis. Please take another photo with better focus and framing all items.', es: 'Hubo un problema con el análisis. Por favor, toma otra foto con mejor enfoque y enmarcando todos los ítems.' },
   analyzingWait: { pt: 'Analisando... Aguarde.', en: 'Analyzing... Wait.', es: 'Analizando... Espere.' },
   reanalyzeBtn: { pt: 'Reanalisar', en: 'Reanalyze', es: 'Reanalizar' },
+  confirmDateTitle: { pt: 'Confirmar Data', en: 'Confirm Date', es: 'Confirmar Fecha' },
+  confirmDateDesc: { pt: 'Confirme a data da compra antes de salvar no histórico.', en: 'Confirm the purchase date before saving to history.', es: 'Confirma la fecha de compra antes de guardar en el historial.' },
   averagePurchase: { pt: 'Esta compra esteve na média das anteriores.', en: 'This purchase was in line with previous ones.', es: 'Esta compra estuvo en el promedio de las anteriores.' },
 };
 

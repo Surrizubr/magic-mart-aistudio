@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { getStock, getLists, getHistory } from '@/data/mockData';
+import { getStock, getLists, getHistory, saveStock, saveLists } from '@/data/mockData';
 import { Plus, ShoppingCart, ScanLine, Share2, Calendar, AlertTriangle, ArrowRight, ChevronRight, ListChecks, Settings, Trash2, Archive, ListTodo } from 'lucide-react';
 import { useState } from 'react';
 import { TabId, ShoppingList, StockItem } from '@/types';
@@ -41,7 +41,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
   const handleDeleteList = (id: string) => {
     setListsState(prev => {
       const updated = prev.filter(l => l.id !== id);
-      localStorage.setItem('shopping_lists', JSON.stringify(updated));
+      saveLists(updated);
       return updated;
     });
     toast.success(t('listDeleted'));
@@ -50,7 +50,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
   const handleArchiveList = (id: string) => {
     setListsState(prev => {
       const updated = prev.map(l => l.id === id ? { ...l, status: 'archived' as const } : l);
-      localStorage.setItem('shopping_lists', JSON.stringify(updated));
+      saveLists(updated);
       return updated;
     });
     toast.success(t('listArchived'));
@@ -59,7 +59,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
   const handleDeleteAlert = (id: string) => {
     setStockState(prev => {
       const updated = prev.filter(s => s.id !== id);
-      localStorage.setItem('stock_items', JSON.stringify(updated));
+      saveStock(updated);
       return updated;
     });
     toast.success(t('alertRemoved'));
@@ -69,7 +69,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
     addToReminderList({ product_name: s.product_name, category: s.category, unit: s.unit, last_price: s.last_price });
     setStockState(prev => {
       const updated = prev.filter(x => x.id !== s.id);
-      localStorage.setItem('stock_items', JSON.stringify(updated));
+      saveStock(updated);
       return updated;
     });
     toast.success(t('addedToShoppingList'));

@@ -73,6 +73,8 @@ const translations: Record<string, Record<Lang, string>> = {
   scan: { pt: 'Escanear', en: 'Scan', es: 'Escanear' },
   receipt: { pt: 'Nota fiscal', en: 'Receipt', es: 'Recibo' },
   share: { pt: 'Compartilhar', en: 'Share', es: 'Compartir' },
+  shopping: { pt: 'Fazer Mercado', en: 'Shopping', es: 'Ir al mercado' },
+  shareSubtitle: { pt: 'Selecione as listas para compartilhar', en: 'Select lists to share', es: 'Selecciona listas para compartir' },
   activeLists: { pt: 'Listas ativas', en: 'Active lists', es: 'Listas activas' },
   activeListsTitle: { pt: 'Listas Ativas', en: 'Active Lists', es: 'Listas Activas' },
   cheapDays: { pt: 'Dias de compras mais baratos', en: 'Cheapest shopping days', es: 'Días de compras más baratos' },

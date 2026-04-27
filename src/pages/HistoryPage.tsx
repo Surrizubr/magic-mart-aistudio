@@ -494,6 +494,16 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
           : t('historySubtitle')
         }
         onBack={onBack}
+        action={
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowExportModal(true)}
+            className="text-primary font-bold hover:bg-primary/10"
+          >
+            <FileDown className="w-4 h-4 mr-1" /> {t('export')}
+          </Button>
+        }
       />
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-4 space-y-4">
@@ -504,14 +514,8 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
               <ScanLine className="w-5 h-5 mr-2" /> {t('scanReceiptBtn')}
             </Button>
             
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                onClick={() => document.getElementById('csv-import-input')?.click()}
-                className="h-10 bg-card border-border hover:bg-accent transition-colors"
-              >
-                <FileUp className="w-4 h-4 mr-2 text-primary" /> {t('import') || 'Importar'}
-              </Button>
+            {/* Import functionality kept but button hidden as per user request */}
+            <div className="hidden">
               <input 
                 id="csv-import-input" 
                 type="file" 
@@ -519,14 +523,6 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
                 className="hidden" 
                 onChange={handleImportCSV}
               />
-              
-              <Button 
-                variant="outline" 
-                onClick={() => setShowExportModal(true)}
-                className="h-10 bg-card border-border hover:bg-accent transition-colors"
-              >
-                <FileDown className="w-4 h-4 mr-2 text-primary" /> {t('export') || 'Exportar'}
-              </Button>
             </div>
 
             {/* Search Field */}

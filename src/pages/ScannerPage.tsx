@@ -296,20 +296,20 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       console.error('AI analysis error after 10 attempts:', err);
       setIsRetrying(false);
       
-      const isApiOk = await testGeminiConnection(geminiApiKey);
-      
-      if (isApiOk) {
-        if (trialCount === 0) {
-          setTrialCount(1);
-          setStep('capture');
-        } else {
-          setTrialCount(2);
-          setError(t('errorNewPhoto'));
-          setStep('capture');
-        }
+      if (trialCount === 0) {
+        // First overall failure for this image set
+        setTrialCount(1);
+        setError(t('analysisError'));
+        setStep('capture');
+      } else if (trialCount === 1) {
+        // Failed even after "Reanalyze" click
+        setTrialCount(2);
+        setError(t('errorNewPhoto'));
+        setStep('capture');
       } else {
-        setTrialCount(0);
-        setError('API_KEY_ERROR');
+        // Failed after taking a new photo
+        setTrialCount(3);
+        setError('API_LIMIT_REACHED');
         setStep('capture');
       }
     }
@@ -1386,6 +1386,27 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
               <X className="w-4 h-4" />
             </button>
           </motion.div>
+        ) : error === 'API_LIMIT_REACHED' ? (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-start gap-3"
+          >
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-destructive font-semibold">{t('aiLimitReached')}</p>
+              <button
+                onClick={() => onOpenMenu?.()} 
+                className="text-xs text-destructive/80 font-bold mt-1 underline underline-offset-2 hover:opacity-80 transition-opacity flex items-center gap-1"
+              >
+                <Settings className="w-3 h-3" />
+                {t('scannerGoToSettings')}
+              </button>
+            </div>
+            <button onClick={() => setError(null)} className="text-destructive/40 hover:text-destructive">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
         ) : error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -1441,10 +1462,10 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
                 >
                   <Button
                     onClick={() => processImages(images)}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white h-11 shadow-md"
+                    className="w-full gradient-primary text-primary-foreground h-11 shadow-md"
                   >
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {t('reanalyzeBtn')}
+                    {t('retryAnalysis')}
                   </Button>
                 </motion.div>
               )}

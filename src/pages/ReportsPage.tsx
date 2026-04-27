@@ -124,7 +124,13 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
     'Padaria': 'Alimentos',
     'Doces': 'Alimentos',
     'Restaurante': 'Restaurante',
+    'Restaurant': 'Restaurante',
     'Manutenção': 'Manutenção',
+    'Maintenance': 'Manutenção',
+    'Mantenimiento': 'Manutenção',
+    'Transporte': 'Transporte',
+    'Transport': 'Transporte',
+    'Transportation': 'Transporte',
   };
 
   const categoryTotals = filteredHistory.reduce<Record<string, number>>((acc, h) => {
@@ -339,7 +345,8 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         {/* Monthly Transport Expenses */}
         {(() => {
           const transportByMonth = history.reduce<Record<string, { label: string, total: number }>>((acc, h) => {
-            if (h.category !== 'Transporte') return acc;
+            const mergedCat = categoryMerge[h.category] || h.category;
+            if (mergedCat !== 'Transporte') return acc;
             const d = new Date(h.purchase_date);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             if (!acc[key]) {
@@ -356,8 +363,6 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
             .sort((a, b) => b[0].localeCompare(a[0]))
             .map(([key, val]) => ({ month: val.label, value: val.total }));
 
-          if (data.length === 0) return null;
-
           return (
             <div className="bg-card rounded-xl border border-border p-4">
               <div className="flex items-center gap-2 mb-4">
@@ -365,12 +370,18 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 <h3 className="text-sm font-bold text-foreground">{t('transportMonthly')}</h3>
               </div>
               <div className="space-y-2">
-                {data.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
-                    <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
-                    <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
+                {data.length > 0 ? (
+                  data.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                      <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
+                      <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center border border-dashed border-border rounded-xl">
+                    <p className="text-xs text-muted-foreground">{t('noExpensesYet')}</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           );
@@ -379,7 +390,8 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
         {/* Yearly Maintenance Expenses */}
         {(() => {
           const maintenanceByYear = history.reduce<Record<string, number>>((acc, h) => {
-            if (h.category !== 'Manutenção') return acc;
+            const mergedCat = categoryMerge[h.category] || h.category;
+            if (mergedCat !== 'Manutenção') return acc;
             const year = new Date(h.purchase_date).getFullYear().toString();
             acc[year] = (acc[year] || 0) + h.total_price;
             return acc;
@@ -389,8 +401,6 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
             .sort((a, b) => b[0].localeCompare(a[0]))
             .map(([year, total]) => ({ year, value: total }));
 
-          if (data.length === 0) return null;
-
           return (
             <div className="bg-card rounded-xl border border-border p-4">
               <div className="flex items-center gap-2 mb-4">
@@ -398,12 +408,18 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 <h3 className="text-sm font-bold text-foreground">{t('maintenanceYearly')}</h3>
               </div>
               <div className="space-y-2">
-                {data.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
-                    <span className="text-sm font-semibold text-foreground">{item.year}</span>
-                    <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
+                {data.length > 0 ? (
+                  data.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                      <span className="text-sm font-semibold text-foreground">{item.year}</span>
+                      <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center border border-dashed border-border rounded-xl">
+                    <p className="text-xs text-muted-foreground">{t('noExpensesYet')}</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           );

@@ -179,34 +179,32 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
 
       let resultData: any = null;
       let attempts = 0;
-      const MAX_ATTEMPTS = 10;
+      const MAX_ATTEMPTS = 3; // Reduced from 10 to allow manual retry sooner
       let lastError: any = null;
 
       while (attempts < MAX_ATTEMPTS) {
         let interval: any = null;
         try {
-          if (attempts > 0) {
+          if (attempts > 0 || isRetrying) {
             setIsRetrying(true);
             setProgressMsg(t('analyzingWait'));
             await new Promise(r => setTimeout(r, 1000));
           }
 
           // Start AI Analysis (this is the long one)
-          // We'll simulate progress while waiting
           const aiPromise = analyzeWithGemini(compressedImgs, RECEIPT_PROMPT, geminiApiKey);
           
-          // Progress simulation for AI analysis (steps 4, 5, 6)
           const aiStartTime = Date.now();
           interval = setInterval(() => {
             const elapsed = Date.now() - aiStartTime;
             if (elapsed < 3000) {
-              setProgressMsg(attempts > 0 ? t('analyzingWait') : t('aiStep4'));
+              setProgressMsg((attempts > 0 || isRetrying) ? t('analyzingWait') : t('aiStep4'));
               setProgressPercent(Math.round(Math.min(45, 35 + (elapsed / 300))));
             } else if (elapsed < 7000) {
-              setProgressMsg(attempts > 0 ? t('analyzingWait') : t('aiStep5'));
+              setProgressMsg((attempts > 0 || isRetrying) ? t('analyzingWait') : t('aiStep5'));
               setProgressPercent(Math.round(Math.min(65, 45 + (elapsed - 3000) / 200)));
             } else {
-              setProgressMsg(attempts > 0 ? t('analyzingWait') : t('aiStep6'));
+              setProgressMsg((attempts > 0 || isRetrying) ? t('analyzingWait') : t('aiStep6'));
               setProgressPercent(Math.round(Math.min(85, 65 + (elapsed - 7000) / 400)));
             }
           }, 500);
@@ -226,6 +224,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
         throw lastError;
       }
 
+      // ... existing value consolidation code ...
       // Step 7: Consolidando valores
       setProgressMsg(t('aiStep7'));
       setProgressPercent(95);
@@ -293,18 +292,18 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       setResult(finalResult);
       setStep('results');
     } catch (err: any) {
-      console.error('AI analysis error after 10 attempts:', err);
+      console.error('AI analysis error:', err);
       setIsRetrying(false);
       
       if (trialCount === 0) {
         // First overall failure for this image set
         setTrialCount(1);
-        setError(t('analysisError'));
+        setError('RETRY_WITHOUT_PHOTO');
         setStep('capture');
       } else if (trialCount === 1) {
-        // Failed even after "Reanalyze" click
+        // Failed even after "Retry Analysis" button
         setTrialCount(2);
-        setError(t('errorNewPhoto'));
+        setError('REQUIRED_NEW_PHOTO');
         setStep('capture');
       } else {
         // Failed after taking a new photo
@@ -387,14 +386,29 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       // Save to stock_items - always save to stock if establishment_type is NOT restaurant/transport/maintenance or if specifically allowed
       // The user clicked "Save to Stock and History" so we should honor that.
       const existingStock: any[] = getStock();
+      let newStock = [...existingStock];
+      
       result.items.forEach(item => {
-        const existing = existingStock.find(s => s.product_name.toLowerCase() === item.product_name.toLowerCase());
-        if (existing) {
-          existing.quantity += item.quantity;
-          existing.last_price = item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price;
-          existing.last_purchase_date = result.date;
+        const sameNameItems = newStock.filter((s: any) => s.product_name.toLowerCase() === item.product_name.toLowerCase());
+        const activeItem = sameNameItems.find((s: any) => s.quantity > 0) || sameNameItems[0];
+
+        if (activeItem) {
+          const idx = newStock.findIndex((s: any) => s.id === activeItem.id);
+          newStock[idx] = {
+            ...newStock[idx],
+            quantity: newStock[idx].quantity + item.quantity,
+            last_price: item.discount_amount > 0 ? item.discounted_price / item.quantity : item.unit_price,
+            last_purchase_date: result.date,
+            status: 'ok'
+          };
+          
+          // Prune zero-stock duplicates
+          const entriesToRemove = sameNameItems.filter((e: any) => e.id !== activeItem.id && e.quantity === 0).map((e: any) => e.id);
+          if (entriesToRemove.length > 0) {
+            newStock = newStock.filter((s: any) => !entriesToRemove.includes(s.id));
+          }
         } else {
-          existingStock.push({
+          newStock.push({
             id: `stock_${Date.now()}_${Math.random().toString(36).slice(2)}`,
             product_name: item.product_name,
             category: item.category,
@@ -409,7 +423,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
           });
         }
       });
-      await saveStock(existingStock);
+      await saveStock(newStock);
 
       // Recalculate consumption rates based on purchase history
       const updatedStock = recalculateAllConsumptionRates();
@@ -437,11 +451,12 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
     saveStock(filteredStock);
   };
 
-  // Get grouped receipts for history view
-  const scannedReceipts = useMemo(() => {
+  // Get grouped receipts for history view with monthly separation
+  const scannedReceiptsGrouped = useMemo(() => {
     const history = getHistory();
     const scanned = history.filter((h: any) => h.scanned && h.receipt_id);
     const grouped: Record<string, { receipt_id: string; store_name: string; date: string; items: any[]; total: number }> = {};
+    
     scanned.forEach((item: any) => {
       if (!grouped[item.receipt_id]) {
         grouped[item.receipt_id] = {
@@ -455,8 +470,28 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       grouped[item.receipt_id].items.push(item);
       grouped[item.receipt_id].total += item.total_price;
     });
-    return Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
-  }, [mode]);
+
+    const sortedArray = Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
+    
+    // Group by month
+    const monthlyGroups: { monthKey: string; monthLabel: string; receipts: any[]; total: number }[] = [];
+    
+    sortedArray.forEach(receipt => {
+      const date = new Date(receipt.date + 'T12:00:00');
+      const monthKey = receipt.date.slice(0, 7); // YYYY-MM
+      const monthLabel = date.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'long', year: 'numeric' });
+      
+      let group = monthlyGroups.find(g => g.monthKey === monthKey);
+      if (!group) {
+        group = { monthKey, monthLabel, receipts: [], total: 0 };
+        monthlyGroups.push(group);
+      }
+      group.receipts.push(receipt);
+      group.total += receipt.total;
+    });
+    
+    return monthlyGroups;
+  }, [mode, lang]);
 
 
   const handleGeoLocation = () => {
@@ -744,51 +779,61 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
       <div className="pb-20">
         <PageHeader
           title={t('scannerHistory')}
-          subtitle={`${scannedReceipts.length} ${t('scannedReceiptsLabel')}`}
+          subtitle={t('digitalizeReceipts')}
           onBack={reset}
         />
-        <div className="p-4 space-y-3">
-          {scannedReceipts.length === 0 ? (
+        <div className="p-4 space-y-6">
+          {scannedReceiptsGrouped.length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <History className="w-12 h-12 text-muted-foreground mx-auto" />
               <p className="text-sm text-muted-foreground">{t('noReceiptsScanned')}</p>
             </div>
           ) : (
-            scannedReceipts.map((receipt) => (
-              <motion.div
-                key={receipt.receipt_id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-card rounded-lg shadow-card p-4"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-card-foreground truncate">{receipt.store_name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(receipt.date + 'T12:00:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR')}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {receipt.items.length} {receipt.items.length === 1 ? t('historyItemCount') : t('historyItemsCount')} — {fc(receipt.total)}
-                    </p>
-                  </div>
+            scannedReceiptsGrouped.map((group) => (
+              <div key={group.monthKey} className="space-y-3">
+                <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                  <h3 className="text-sm font-bold text-foreground capitalize">{group.monthLabel}</h3>
+                  <span className="text-xs font-bold text-primary">{fc(group.total)}</span>
                 </div>
-                <div className="flex items-center gap-3 mt-3">
-                  <button
-                    onClick={() => onNavigateToHistory?.(receipt.date, receipt.store_name)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    {t('seeItems')}
-                  </button>
-                  <button
-                    onClick={() => setConfirmDeleteId(receipt.receipt_id)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-destructive hover:underline"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    {t('delete')}
-                  </button>
+                <div className="space-y-3">
+                  {group.receipts.map((receipt) => (
+                    <motion.div
+                      key={receipt.receipt_id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-card rounded-lg shadow-card p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-card-foreground truncate">{receipt.store_name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(receipt.date + 'T12:00:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR')}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {receipt.items.length} {receipt.items.length === 1 ? t('historyItemCount') : t('historyItemsCount')} — {fc(receipt.total)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 mt-3">
+                        <button
+                          onClick={() => onNavigateToHistory?.(receipt.date, receipt.store_name)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          {t('seeItems')}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(receipt.receipt_id)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-destructive hover:underline"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {t('delete')}
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-              </motion.div>
+              </div>
             ))
           )}
         </div>
@@ -1407,6 +1452,44 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
               <X className="w-4 h-4" />
             </button>
           </motion.div>
+        ) : error === 'RETRY_WITHOUT_PHOTO' ? (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex flex-col gap-3"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-amber-800 font-semibold">{t('analysisError')}</p>
+                <p className="text-xs text-amber-700 mt-1">Houve um problema temporário. Gostaria de tentar a análise novamente com as mesmas fotos?</p>
+              </div>
+              <button onClick={() => setError(null)} className="text-amber-400 hover:text-amber-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <Button 
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0" 
+              onClick={() => processImages(images)}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              {t('retryAnalysis')}
+            </Button>
+          </motion.div>
+        ) : error === 'REQUIRED_NEW_PHOTO' ? (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-start gap-3"
+          >
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-destructive font-semibold">{t('errorNewPhoto')}</p>
+            </div>
+            <button onClick={() => setError(null)} className="text-destructive/40 hover:text-destructive">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
         ) : error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -1416,7 +1499,7 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
             <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <div>
               <p className="text-sm text-destructive font-medium">{t('analysisError')}</p>
-              <p className="text-xs text-destructive/80 mt-0.5">{error}</p>
+              <p className="text-xs text-destructive/80 mt-0.5">{typeof error === 'string' && error.length < 100 ? error : 'Erro técnico na API'}</p>
             </div>
             <button onClick={() => setError(null)} className="ml-auto">
               <X className="w-4 h-4 text-destructive" />

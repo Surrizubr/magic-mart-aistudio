@@ -219,17 +219,29 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
     
     // Save to stock
     const existing = getStock();
-    const newStock = [...existing];
+    let newStock = [...existing];
     
     items.forEach(item => {
-      const idx = newStock.findIndex(e => e.product_name.toLowerCase() === item.product_name.toLowerCase());
-      if (idx >= 0) {
+      // Find all matches for this product name
+      const sameNameItems = newStock.filter(e => e.product_name.toLowerCase() === item.product_name.toLowerCase());
+      const activeItem = sameNameItems.find(e => e.quantity > 0) || sameNameItems[0];
+      
+      if (activeItem) {
+        // Update the active item
+        const idx = newStock.findIndex(e => e.id === activeItem.id);
         newStock[idx] = {
           ...newStock[idx],
           quantity: newStock[idx].quantity + item.quantity,
           last_price: item.price,
-          last_purchase_date: new Date().toISOString()
+          last_purchase_date: new Date().toISOString(),
+          status: 'ok' // Reset status to 'ok' since we just replenished it
         };
+        
+        // Prune any other items with same name and 0 quantity
+        const entriesToRemove = sameNameItems.filter(e => e.id !== activeItem.id && e.quantity === 0).map(e => e.id);
+        if (entriesToRemove.length > 0) {
+          newStock = newStock.filter(s => !entriesToRemove.includes(s.id));
+        }
       } else {
         newStock.push({
           id: crypto.randomUUID(),

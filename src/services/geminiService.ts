@@ -135,7 +135,7 @@ REGRAS:
    - "transport": para postos de combustível, apps de transporte, pedágios, etc.
    - "maintenance": para lojas de material de construção, ferragens, hidráulica, elétrica, itens de manutenção da casa, etc.
    - REGRAS DE FALLBACK: Se houver dúvida, analise os itens: itens de consumo imediato ou refeições indicam "restaurant"; combustível ou serviços de mobilidade indicam "transport"; parafusos, lâmpadas, torneiras ou ferramentas indicam "maintenance"; compras de mercearia variadas indicam "supermarket". Se ainda assim não for possível identificar, use "supermarket" como padrão.
-4. Categorias de ITENS: Frutas, Verduras, Carnes, Laticínios, Padaria, Bebidas, Limpeza, Higiene, Grãos, Temperos, Restaurante, Manutenção, Outros. 
+4. Categorias de ITENS: Laticínios, Grãos, Bebidas, Temperos, Limpeza, Carnes, Frutas, Alimentos, Higiene, Hortifruti, Padaria, Restaurante, Manutenção, Transporte, Outros. 
    - Se establishment_type for "restaurant", a categoria de TODOS os itens deve ser obrigatoriamente "Restaurante".
    - Se establishment_type for "maintenance", a categoria de TODOS os itens deve ser obrigatoriamente "Manutenção".
    - Se establishment_type for "transport", a categoria de TODOS os itens deve ser obrigatoriamente "Transporte".

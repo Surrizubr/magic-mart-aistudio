@@ -301,7 +301,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                     <span className="text-xs font-bold text-primary bg-accent w-6 h-6 rounded flex items-center justify-center">{i + 1}</span>
                     <span className="text-sm font-medium text-foreground uppercase">{name}</span>
                   </div>
-                  <span className="text-sm font-medium text-muted-foreground">{count}x</span>
+                  <span className="text-sm font-medium text-muted-foreground">{typeof count === 'number' ? (Number.isInteger(count) ? count : count.toFixed(2)) : count}x</span>
                 </div>
               ))}
             </div>

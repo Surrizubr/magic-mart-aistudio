@@ -102,6 +102,25 @@ export function daysSincePurchase(item: StockItem & { last_purchase_date?: strin
 }
 
 /**
+ * Returns the estimated price for a product based on history.
+ * Uses the average of the last 3 purchases if available, otherwise just the most recent one.
+ */
+export function getEstimatedPrice(productName: string, history: PurchaseHistory[]): number {
+  if (!history || history.length === 0) return 0;
+
+  const matches = history
+    .filter(h => h.product_name.toLowerCase() === productName.toLowerCase())
+    .sort((a, b) => new Date(b.purchase_date).getTime() - new Date(a.purchase_date).getTime());
+
+  if (matches.length === 0) return 0;
+  
+  // Use last 3 purchases to average out some variations
+  const last3 = matches.slice(0, 3);
+  const sum = last3.reduce((acc, curr) => acc + curr.price, 0);
+  return sum / last3.length;
+}
+
+/**
  * Sort stock items by criticality (least days left first).
  */
 export function sortByCriticality<T extends StockItem & { last_purchase_date?: string }>(items: T[]): T[] {

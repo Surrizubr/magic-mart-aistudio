@@ -328,6 +328,7 @@ const translations: Record<string, Record<Lang, string>> = {
   recentPurchase: { pt: 'Compra Recente', en: 'Recent Purchase', es: 'Compra Recente' },
   previousPurchase: { pt: 'Compra Anterior', en: 'Previous Purchase', es: 'Compra Anterior' },
   closeDetails: { pt: 'Fechar Detalhes', en: 'Close Details', es: 'Cerrar Detalles' },
+  estimated: { pt: 'Estimado', en: 'Estimated', es: 'Estimado' },
   estimatedTotalLabel: { pt: 'Total estimado:', en: 'Estimated total:', es: 'Total estimado:' },
   sentViaApp: { pt: 'Enviado via Magicmart AI 🌿', en: 'Sent via Magicmart AI 🌿', es: 'Enviado vía Magicmart AI 🌿' },
   noActiveListsToShare: { pt: 'Nenhuma lista ativa para compartilhar.', en: 'No active lists to share.', es: 'No hay listas activas para compartir.' },

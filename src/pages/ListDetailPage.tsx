@@ -4,12 +4,12 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ShoppingList, ShoppingListItem, StockItem } from '@/types';
-import { ArrowLeft, Plus, ShoppingCart, CheckCircle, Trash2, MapPin, Loader2, Search } from 'lucide-react';
+import { ArrowLeft, Plus, ShoppingCart, CheckCircle, Trash2, MapPin, Loader2, Search, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PermissionGate } from '@/components/PermissionGate';
-import { getStock } from '@/data/mockData';
-import { deriveStatus } from '@/lib/stockHelpers';
+import { getStock, getHistory } from '@/data/mockData';
+import { deriveStatus, getEstimatedPrice } from '@/lib/stockHelpers';
 
 interface ListDetailPageProps {
   list: ShoppingList;
@@ -82,6 +82,9 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
 
   const addItem = () => {
     if (!newProduct.trim()) return;
+    const historyData = getHistory();
+    const priceFromHistory = getEstimatedPrice(newProduct.trim(), historyData);
+    
     const newItem: ShoppingListItem = {
       id: Date.now().toString(),
       list_id: list.id,
@@ -89,7 +92,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
       category: t('general'),
       quantity: parseFloat(newQty) || 1,
       unit: newUnit,
-      estimated_price: parseFloat(newPrice) || 0,
+      estimated_price: parseFloat(newPrice) || priceFromHistory || 0,
       actual_price: 0,
       is_checked: false,
     };
@@ -203,6 +206,14 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
   };
 
   const checkedCount = items.filter(i => i.is_checked).length;
+  const history = getHistory();
+
+  const estimatedTotal = useMemo(() => {
+    return items.reduce((total, item) => {
+      const price = item.estimated_price || getEstimatedPrice(item.product_name, history);
+      return total + (price * item.quantity);
+    }, 0);
+  }, [items, history]);
 
   return (
     <div className="pb-20">
@@ -219,6 +230,17 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
       />
 
       <div className="p-4 space-y-3">
+        {/* Total Estimated display */}
+        {estimatedTotal > 0 && (
+          <div className="bg-card rounded-xl border border-border p-4 shadow-sm flex justify-between items-center bg-gradient-to-br from-card to-secondary/30">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calculator className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">{t('estimatedTotalLabel')}</span>
+            </div>
+            <span className="text-lg font-bold text-primary">{fc(estimatedTotal)}</span>
+          </div>
+        )}
+
         {/* Add item button - only if not in shopping mode */}
         {!shoppingMode && (
           <Button size="sm" onClick={() => setShowAddItem(true)} className="gradient-primary text-primary-foreground border-0 w-full">
@@ -350,7 +372,18 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {item.quantity} {item.unit}
-                    {item.estimated_price > 0 && ` · ${fc(item.estimated_price)}`}
+                    {(() => {
+                      const estPrice = item.estimated_price || getEstimatedPrice(item.product_name, history);
+                      if (estPrice > 0) {
+                        return (
+                          <span className="flex items-center gap-1 mt-1 font-medium text-primary">
+                            <Calculator className="w-2.5 h-2.5" />
+                            {fc(estPrice * item.quantity)}
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground mr-1">{t(item.category)}</span>

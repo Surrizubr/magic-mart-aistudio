@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { recalculateStockRates } from '@/lib/consumptionCalculator';
 import { REMINDER_LIST_NAME_CONST } from '@/lib/reminderList';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
 import { getLists, saveLists, getStock, saveStock, getHistory, saveHistory } from '@/data/mockData';
-import { Plus, ShoppingCart, CheckCircle2, Archive, Trash2, ArchiveRestore } from 'lucide-react';
+import { Plus, ShoppingCart, CheckCircle2, Archive, Trash2, ArchiveRestore, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ShoppingList, ShoppingListItem, StockItem } from '@/types';
+import { ShoppingList, ShoppingListItem, StockItem, PurchaseHistory } from '@/types';
 import { ListDetailPage } from './ListDetailPage';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getEstimatedPrice } from '@/lib/stockHelpers';
 
 type Filter = 'active' | 'completed' | 'archived';
 
@@ -23,6 +24,7 @@ export function ListsPage({ onBack }: ListsPageProps) {
   const [showNewList, setShowNewList] = useState(false);
   const [newName, setNewName] = useState('');
   const [lists, setLists] = useState<ShoppingList[]>(() => getLists());
+  const history = useMemo(() => getHistory(), []);
   const [selectedListId, setSelectedListId] = useState<string | null>(() => localStorage.getItem('selected_list_id'));
   const selectedList = lists.find(l => l.id === selectedListId) || null;
 
@@ -221,6 +223,7 @@ export function ListsPage({ onBack }: ListsPageProps) {
               key={l.id}
               list={l}
               index={i}
+              history={history}
               onSelect={() => setSelectedListId(l.id)}
               onSwipe={(dir) => handleSwipe(l.id, dir)}
             />
@@ -237,17 +240,26 @@ export function ListsPage({ onBack }: ListsPageProps) {
 function SwipeableListCard({
   list,
   index,
+  history,
   onSelect,
   onSwipe,
 }: {
   list: ShoppingList;
   index: number;
+  history: PurchaseHistory[];
   onSelect: () => void;
   onSwipe: (dir: 'left' | 'right') => void;
 }) {
-  const { lang, t } = useLanguage();
+  const { lang, t, formatCurrency: fc } = useLanguage();
   const [dragX, setDragX] = useState(0);
   const threshold = 100;
+
+  const estimatedTotal = useMemo(() => {
+    return list.items.reduce((total, item) => {
+      const price = item.estimated_price || getEstimatedPrice(item.product_name, history);
+      return total + (price * item.quantity);
+    }, 0);
+  }, [list.items, history]);
 
   const handleDragEnd = (_: any, info: PanInfo) => {
     if (info.offset.x < -threshold) {
@@ -292,7 +304,18 @@ function SwipeableListCard({
             <ShoppingCart className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground">{list.name}</p>
+            <div className="flex justify-between items-start">
+              <p className="text-sm font-bold text-foreground">{list.name}</p>
+              {estimatedTotal > 0 && (
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase flex items-center gap-1">
+                    <Calculator className="w-2.5 h-2.5" />
+                    {t('estimated')}
+                  </span>
+                  <span className="text-sm font-bold text-primary">{fc(estimatedTotal)}</span>
+                </div>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {list.status === 'shopping' ? `${t('inShopping')} · ` : ''}
               {list.checked_items}/{list.total_items} {t('items').toLowerCase()}

@@ -181,7 +181,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <ListChecks className="w-5 h-5 text-primary" />
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">{t('activeListsTitle')}</h2>
+              <h2 className="text-sm font-bold text-foreground tracking-tight">{t('activeListsTitle')}</h2>
             </div>
             <button onClick={() => onNavigate('lists')} className="text-xs text-primary font-medium flex items-center gap-0.5">
               {t('seeAll')} <ArrowRight className="w-3 h-3" />
@@ -224,7 +224,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-destructive" />
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">{t('alerts')}</h2>
+              <h2 className="text-sm font-bold text-foreground tracking-tight">{t('alerts')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => onNavigate('stock')} className="text-xs text-primary font-medium flex items-center gap-0.5">
@@ -276,7 +276,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
         <motion.div variants={item} className="bg-card rounded-2xl border border-border p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-5 h-5 text-primary" />
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">{t('suggestedCheapestDaysTitle')}</h2>
+            <h2 className="text-sm font-bold text-foreground tracking-tight">{t('suggestedCheapestDaysTitle')}</h2>
           </div>
 
           <div className="space-y-4">
@@ -336,7 +336,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
                       key={`day-${dayVal}`}
                       className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold border transition-all ${getLevelStyle(level)} ${
                         today 
-                          ? 'ring-2 ring-blue-500 ring-offset-1 z-10 shadow-sm' 
+                          ? 'ring-2 ring-red-500 ring-offset-1 z-10 shadow-sm' 
                           : ''
                       }`}
                     >

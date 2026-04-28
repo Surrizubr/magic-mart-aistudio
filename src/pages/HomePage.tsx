@@ -327,12 +327,14 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
                   grid.push(
                     <div
                       key={`day-${dayVal}`}
-                      className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold border transition-colors ${
+                      className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold border transition-all ${
+                        cheap 
+                          ? 'bg-primary/40 border-primary/40 text-primary-foreground font-extrabold' 
+                          : 'bg-primary/10 border-primary/10 text-muted-foreground'
+                      } ${
                         today 
-                          ? 'bg-blue-600/80 border-blue-700 text-white shadow-sm ring-2 ring-blue-500/10' 
-                          : cheap 
-                            ? 'bg-primary/40 border-primary/20 text-foreground' 
-                            : 'bg-primary/20 border-primary/10 text-muted-foreground'
+                          ? 'ring-2 ring-blue-500 ring-offset-1 z-10 shadow-sm' 
+                          : ''
                       }`}
                     >
                       {dayVal}

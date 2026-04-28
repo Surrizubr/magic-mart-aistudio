@@ -290,7 +290,10 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-2 px-1">
               {/* Weekday Labels */}
-              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
+              {Array.from({ length: 7 }, (_, i) => {
+                const date = new Date(2024, 0, 7 + i); // Jan 7, 2024 is Sunday
+                return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { weekday: 'narrow' }).format(date);
+              }).map((day, i) => (
                 <div key={i} className="text-[10px] font-bold text-muted-foreground text-center py-1 uppercase">{day}</div>
               ))}
 

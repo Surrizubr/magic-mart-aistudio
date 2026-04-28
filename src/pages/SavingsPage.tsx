@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
 import { getHistory } from '@/data/mockData';
@@ -6,8 +6,6 @@ import { AlertTriangle, Info, MapPin, X, ChevronRight, TrendingDown, TrendingUp,
 import { PurchaseHistory } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-
-const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 function getLevelColor(level: number) {
   switch (level) {
@@ -41,6 +39,14 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedWeekDay, setSelectedWeekDay] = useState<number | null>(null);
   const [selectedVariation, setSelectedVariation] = useState<any | null>(null);
+
+  const weekDays = useMemo(() => {
+    const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR';
+    const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    // Mon=0... for Savings page it uses Mon-Sun? 
+    // Line 10 in original SavingsPage: Seg, Ter... (Mon-Sun)
+    return Array.from({ length: 7 }, (_, i) => formatter.format(new Date(2024, 0, 8 + i))); 
+  }, [lang]);
 
   // Use all history — no date filtering, so every purchase appears
   const weekHistory = allHistory;
@@ -245,6 +251,7 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
       ? weekDays[selectedWeekDay]
       : '';
 
+
   return (
     <div className="pb-20">
       <PageHeader
@@ -315,7 +322,7 @@ export function SavingsPage({ onBack, onNavigateToHistory }: SavingsPageProps) {
                 disabled={weekData[i] === 0}
                 className="flex flex-col items-center gap-1.5 group"
               >
-                <span className="text-[10px] font-medium text-muted-foreground">{t(day.toLowerCase())}</span>
+                <span className="text-[10px] font-medium text-muted-foreground capitalize">{day}</span>
                 <div className={`w-full aspect-square rounded-lg ${getWeekColor(weekData[i])} flex items-center justify-center transition-transform ${weekData[i] > 0 ? 'cursor-pointer group-hover:scale-110 group-active:scale-95' : ''}`}>
                   {weekData[i] > 0 && <span className="text-xs font-bold text-foreground">{weekData[i]}</span>}
                 </div>

@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
 import { getStock, getLists, getHistory, saveStock, saveLists } from '@/data/mockData';
-import { Plus, ShoppingCart, ScanLine, Share2, Calendar, AlertTriangle, ArrowRight, ChevronRight, ListChecks, Settings, Trash2, Archive, ListTodo } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, Package, AlertTriangle, ArrowRight, ChevronRight, ListChecks, Settings, Trash2, Archive, ListTodo, ShoppingCart, ScanLine, Share2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { TabId, ShoppingList, StockItem } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SwipeableRow } from '@/components/SwipeableRow';
 import { addToReminderList } from '@/lib/reminderList';
 import { computeDaysLeft, deriveStatus, sortByCriticality } from '@/lib/stockHelpers';
+import { calculateHeatmapData, getPriceLevelForDate, PriceLevel } from '@/lib/heatmapCalculator';
 import { toast } from 'sonner';
 
 interface HomePageProps {
@@ -29,6 +30,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
   const [stockState, setStockState] = useState<StockItem[]>(() => getStock());
   const [listsState, setListsState] = useState<ShoppingList[]>(() => getLists());
   const history = getHistory();
+  const heatmapStats = useMemo(() => calculateHeatmapData(history), [history]);
   // Sort by criticality (least days left first), only items with <= 3 days
   const criticalStock = sortByCriticality(
     stockState
@@ -302,17 +304,20 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
                 
                 const grid = [];
                 
-                // Get cheap days (mocked: usually Tuesdays and Fridays)
-                const isCheapDay = (day: number) => {
-                  const d = new Date(year, month, day);
-                  const dayOfWeek = d.getDay();
-                  // Tuesdays (2) and Fridays (5) are usually cheaper according to history
-                  return dayOfWeek === 2 || dayOfWeek === 5;
-                };
-
                 const isToday = (day: number) => {
                   const d = new Date();
                   return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+                };
+
+                const getLevelStyle = (level: PriceLevel) => {
+                  switch (level) {
+                    case PriceLevel.VERY_CHEAP: return 'bg-primary/80 border-primary/20 text-white';
+                    case PriceLevel.CHEAP: return 'bg-primary/40 border-primary/10 text-foreground';
+                    case PriceLevel.OK: return 'bg-primary/10 border-primary/5 text-muted-foreground';
+                    case PriceLevel.EXPENSIVE: return 'bg-[#f59e0b]/40 border-[#f59e0b]/20 text-orange-900'; // Amber/Warning
+                    case PriceLevel.VERY_EXPENSIVE: return 'bg-[#ef4444]/40 border-[#ef4444]/20 text-red-900'; // Destructive/Red
+                    default: return 'bg-primary/10 border-primary/5 text-muted-foreground';
+                  }
                 };
 
                 // Empty cells before first day
@@ -322,16 +327,14 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
 
                 // Days of the month
                 for (let dayVal = 1; dayVal <= daysInMonth; dayVal++) {
-                  const cheap = isCheapDay(dayVal);
+                  const dateObj = new Date(year, month, dayVal);
+                  const level = getPriceLevelForDate(dateObj, heatmapStats);
                   const today = isToday(dayVal);
+                  
                   grid.push(
                     <div
                       key={`day-${dayVal}`}
-                      className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold border transition-all ${
-                        cheap 
-                          ? 'bg-primary/40 border-primary/40 text-primary-foreground font-extrabold' 
-                          : 'bg-primary/10 border-primary/10 text-muted-foreground'
-                      } ${
+                      className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold border transition-all ${getLevelStyle(level)} ${
                         today 
                           ? 'ring-2 ring-blue-500 ring-offset-1 z-10 shadow-sm' 
                           : ''

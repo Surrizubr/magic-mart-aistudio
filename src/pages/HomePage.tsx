@@ -286,9 +286,8 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             </div>
 
             {/* Calendar Grid */}
-            <div className="grid grid-cols-[30px_repeat(7,1fr)] gap-1 px-1">
+            <div className="grid grid-cols-7 gap-2 px-1">
               {/* Weekday Labels */}
-              <div className="text-[10px] font-bold text-muted-foreground flex items-center justify-center">{t('calendarWeekCode')}</div>
               {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
                 <div key={i} className="text-[10px] font-bold text-muted-foreground text-center py-1 uppercase">{day}</div>
               ))}
@@ -301,17 +300,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
                 const firstDay = new Date(year, month, 1).getDay();
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
                 
-                // Helper for week numbers
-                const getWeekNumber = (d: Date) => {
-                  const date = new Date(d.getTime());
-                  date.setHours(0, 0, 0, 0);
-                  date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-                  const week1 = new Date(date.getFullYear(), 0, 4);
-                  return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-                };
-
                 const grid = [];
-                let currentDay = 1;
                 
                 // Get cheap days (mocked: usually Tuesdays and Fridays)
                 const isCheapDay = (day: number) => {
@@ -326,41 +315,31 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
                   return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
                 };
 
-                for (let week = 0; week < 6; week++) {
-                  if (currentDay > daysInMonth) break;
-                  
-                  const weekDate = new Date(year, month, currentDay);
+                // Empty cells before first day
+                for (let i = 0; i < firstDay; i++) {
+                  grid.push(<div key={`empty-${i}`} />);
+                }
+
+                // Days of the month
+                for (let dayVal = 1; dayVal <= daysInMonth; dayVal++) {
+                  const cheap = isCheapDay(dayVal);
+                  const today = isToday(dayVal);
                   grid.push(
-                    <div key={`wk-${week}`} className="text-[9px] font-mono font-bold text-muted-foreground/60 flex items-center justify-center border-r border-border/50">
-                      {getWeekNumber(weekDate)}
+                    <div
+                      key={`day-${dayVal}`}
+                      className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold border transition-colors ${
+                        today 
+                          ? 'bg-blue-600/80 border-blue-700 text-white shadow-sm ring-2 ring-blue-500/10' 
+                          : cheap 
+                            ? 'bg-primary/40 border-primary/20 text-foreground' 
+                            : 'bg-primary/20 border-primary/10 text-muted-foreground'
+                      }`}
+                    >
+                      {dayVal}
                     </div>
                   );
-
-                  for (let i = 0; i < 7; i++) {
-                    if ((week === 0 && i < firstDay) || currentDay > daysInMonth) {
-                      grid.push(<div key={`empty-${week}-${i}`} />);
-                    } else {
-                      const dayVal = currentDay;
-                      const cheap = isCheapDay(dayVal);
-                      const today = isToday(dayVal);
-                      grid.push(
-                        <div
-                          key={`day-${dayVal}`}
-                          className={`aspect-square rounded-md flex items-center justify-center text-[10px] font-bold border transition-colors ${
-                            today 
-                              ? 'bg-blue-500 border-blue-600 text-white shadow-sm ring-2 ring-blue-500/20' 
-                              : cheap 
-                                ? 'bg-green-600 border-green-700 text-white' 
-                                : 'bg-green-100 border-green-200 text-green-800/60'
-                          }`}
-                        >
-                          {dayVal}
-                        </div>
-                      );
-                      currentDay++;
-                    }
-                  }
                 }
+
                 return grid;
               })()}
             </div>

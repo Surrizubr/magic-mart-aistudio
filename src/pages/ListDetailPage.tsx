@@ -37,7 +37,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
     return stock.sort((a, b) => {
       const order = { critical: 0, warning: 1, ok: 2 };
       return (order[a.status as keyof typeof order] ?? 3) - (order[b.status as keyof typeof order] ?? 3);
-    }).slice(0, 10);
+    }).slice(0, 20);
   }, []);
 
   const filteredSuggestions = useMemo(() => {
@@ -246,7 +246,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                     }}
                   />
                   {showSuggestions && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card rounded-lg shadow-elevated border border-border overflow-hidden">
+                    <div className="relative z-10 mt-2 bg-secondary/30 rounded-lg border border-border/50 overflow-y-auto max-h-[40vh] shadow-inner transition-all">
                       {filteredSuggestions.map(s => (
                         <button
                           key={s.id}
@@ -256,7 +256,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                             setNewPrice(s.last_price?.toString() || '');
                             setShowSuggestions(false);
                           }}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-accent border-b border-border/50 last:border-0 flex items-center justify-between"
+                          className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent border-b border-border/30 last:border-0 flex items-center justify-between"
                         >
                           <span className="font-medium text-foreground">{s.product_name}</span>
                           <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
@@ -273,7 +273,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                       )}
                     </div>
                   )}
-                  {showSuggestions && <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowSuggestions(false)} />}
+                  {showSuggestions && <div className="fixed inset-0 z-[5] bg-transparent" onClick={() => setShowSuggestions(false)} />}
                 </div>
                 <div className="flex gap-2">
                   <input

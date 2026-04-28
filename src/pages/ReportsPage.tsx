@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
 import { getHistory } from '@/data/mockData';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from 'recharts';
-import { TrendingUp, BarChart3, ShoppingCart, Clock, Calendar, MapPin, ExternalLink, PieChart as PieChartIcon, Tag, Store, Bus, Wrench } from 'lucide-react';
+import { TrendingUp, BarChart3, ShoppingCart, Clock, Calendar, MapPin, ExternalLink, PieChart as PieChartIcon, Tag, Store, Bus, Wrench, Utensils } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -368,6 +368,51 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
               <div className="flex items-center gap-2 mb-4">
                 <Bus className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-bold text-foreground">{t('transportMonthly')}</h3>
+              </div>
+              <div className="space-y-2">
+                {data.length > 0 ? (
+                  data.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                      <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
+                      <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center border border-dashed border-border rounded-xl">
+                    <p className="text-xs text-muted-foreground">{t('noExpensesYet')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Monthly Restaurant Expenses */}
+        {(() => {
+          const restaurantByMonth = history.reduce<Record<string, { label: string, total: number }>>((acc, h) => {
+            const mergedCat = categoryMerge[h.category] || h.category;
+            if (mergedCat !== 'Restaurante') return acc;
+            const d = new Date(h.purchase_date);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            if (!acc[key]) {
+              acc[key] = {
+                label: d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''),
+                total: 0
+              };
+            }
+            acc[key].total += h.total_price;
+            return acc;
+          }, {});
+
+          const data = Object.entries(restaurantByMonth)
+            .sort((a, b) => b[0].localeCompare(a[0]))
+            .map(([key, val]) => ({ month: val.label, value: val.total }));
+
+          return (
+            <div className="bg-card rounded-xl border border-border p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Utensils className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">{t('restaurantsMonthly')}</h3>
               </div>
               <div className="space-y-2">
                 {data.length > 0 ? (

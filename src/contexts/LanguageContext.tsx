@@ -449,6 +449,7 @@ const translations: Record<string, Record<Lang, string>> = {
   reset: { pt: 'Resetar', en: 'Reset', es: 'Reiniciar' },
   categoryUpdated: { pt: 'Categoria atualizada!', en: 'Category updated!', es: '¡Categoría actualizada!' },
   transportMonthly: { pt: 'Gastos Mensais com Transporte', en: 'Monthly Transport Expenses', es: 'Gastos Mensuales con Transporte' },
+  restaurantsMonthly: { pt: 'Gastos Mensais com Restaurante', en: 'Monthly Restaurant Expenses', es: 'Gastos Mensuales con Restaurante' },
   maintenanceYearly: { pt: 'Gastos Anuais com Manutenção', en: 'Yearly Maintenance Expenses', es: 'Gastos Anuales con Mantenimiento' },
   wherePurchased: { pt: 'Informe onde você fez as compras:', en: 'Enter where you made the purchases:', es: 'Informa dónde hiciste las compras:' },
   storePlaceholder: { pt: 'Ex: Supermercado Extra', en: 'e.g. Supermarket', es: 'Ej: Supermercado' },

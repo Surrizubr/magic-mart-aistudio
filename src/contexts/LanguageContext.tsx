@@ -307,6 +307,8 @@ const translations: Record<string, Record<Lang, string>> = {
   heatmapLegendMonth: { pt: 'Últimos 3 meses · Toque para ver os locais', en: 'Last 3 months · Tap to see locations', es: 'Últimos 3 meses · Toca para ver locales' },
   bestLocations: { pt: 'Melhores Locais para Comprar', en: 'Best Locations to Buy', es: 'Mejores Lugares para Comprar' },
   productsMonitored: { pt: '{count} produtos monitorados', en: '{count} products monitored', es: '{count} productos monitoreados' },
+  suggestedCheapestDaysTitle: { pt: 'Sugestão de dias mais baratos', en: 'Suggested cheapest days', es: 'Días sugeridos más baratos' },
+  calendarWeekCode: { pt: 'S', en: 'W', es: 'S' },
   savingsIndex: { pt: 'Índice Economia', en: 'Savings Index', es: 'Índice Ahorro' },
   insufficientHistory: { pt: 'Histórico insuficiente para calcular economia por local.', en: 'Insufficient history to calculate savings by location.', es: 'Historial insuficiente para calcular ahorro por lugar.' },
   savingsIndexLegend: { pt: '* O Índice de Economia compara os preços pagos com o menor preço já registrado. 100% indica os melhores preços.', en: '* The Savings Index compares prices paid with the lowest price recorded. 100% indicates best prices.', es: '* El Índice de Ahorro compara los precios pagados con el menor precio registrado. 100% indica mejores precios.' },

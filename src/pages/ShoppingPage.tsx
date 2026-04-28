@@ -131,14 +131,14 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
     const loadingToast = toast.info(t('gettingLocation'), { duration: 10000 });
 
     const options = {
-      timeout: 10000,
-      enableHighAccuracy: false, // More reliable in many browsers
-      maximumAge: 30000
+      timeout: 15000,
+      enableHighAccuracy: false, 
+      maximumAge: 60000
     };
 
     const successCallback = async (pos: GeolocationPosition) => {
       try {
-        console.log("Coords obtained in ShoppingPage:", pos.coords.latitude, pos.coords.longitude);
+        console.log("Geolocation successful in ShoppingPage:", pos.coords.latitude, pos.coords.longitude);
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
           { 
@@ -149,31 +149,29 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
           }
         );
         
-        if (!res.ok) throw new Error("API reverse geocoding failed");
+        if (!res.ok) throw new Error("OSM API error");
         
         const data = await res.json();
         const addr = data.address || {};
         const road = addr.road || addr.pedestrian || addr.street || '';
         const number = addr.house_number || '';
-        const shop = addr.shop || addr.supermarket || addr.building || addr.commercial || '';
-        const city = addr.city || addr.town || addr.village || '';
+        const shop = addr.shop || addr.supermarket || addr.building || addr.commercial || addr.mall || addr.marketplace || '';
+        const city = addr.city || addr.town || addr.village || addr.suburb || '';
         
         let name = '';
         if (shop) name = shop;
         if (road) name += (name ? ' - ' : '') + road;
         if (number) name += ', ' + number;
-        if (city && !shop && !road) name += (name ? ' - ' : '') + city;
+        if (!name.trim() && city) name = city;
         
         if (!name.trim()) name = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
         
         setStoreName(name.trim());
-        setStoreSet(true);
         toast.dismiss(loadingToast);
         toast.success(t('locationObtained'));
       } catch (err) {
-        console.error("OSM Error in ShoppingPage:", err);
+        console.error("Geocoding Error in ShoppingPage:", err);
         setStoreName(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
-        setStoreSet(true);
         toast.dismiss(loadingToast);
         toast.info(t('coordsSaved'));
       }
@@ -527,6 +525,12 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
           onBack={() => setMode(null)}
         />
         <div className="px-4 pt-6 space-y-4">
+          <PermissionGate 
+            isOpen={showLocationGate} 
+            type="location" 
+            onAllow={executeGeoLocation} 
+            onCancel={() => setShowLocationGate(false)} 
+          />
           <div className="bg-card rounded-xl border border-border p-4 space-y-3">
             <label className="text-sm font-medium text-foreground">{t('marketNameLabel')}</label>
             <input

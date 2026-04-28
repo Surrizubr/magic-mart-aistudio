@@ -503,21 +503,28 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
     if (!result) return;
     
     setGeoLoading(true);
-    console.log("Starting geolocation...");
+    console.log("Starting geolocation in ScannerPage...");
     
-    if (!navigator.geolocation) {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
       toast.error(t('locationError'));
       setGeoLoading(false);
       return;
     }
 
+    const loadingToast = toast.info(t('gettingLocation'), { duration: 5000 });
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          console.log("Coords obtained:", pos.coords.latitude, pos.coords.longitude);
+          console.log("Coords obtained in ScannerPage:", pos.coords.latitude, pos.coords.longitude);
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
-            { headers: { 'Accept-Language': lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US' } }
+            { 
+              headers: { 
+                'Accept-Language': lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US',
+                'User-Agent': 'MagicmartAI/1.0'
+              } 
+            }
           );
           if (!res.ok) throw new Error("API reverse geocoding failed");
           
@@ -535,17 +542,21 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
           if (!name.trim()) name = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
           
           setResult({ ...result, store_name: name.trim() });
+          toast.dismiss(loadingToast);
           toast.success(t('locationObtained'));
         } catch (err) {
-          console.error("OSM Error:", err);
+          console.error("OSM Error in ScannerPage:", err);
           setResult({ ...result, store_name: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
+          toast.dismiss(loadingToast);
           toast.info(t('coordsSaved'));
         }
         setGeoLoading(false);
       },
       (err) => {
-        console.error("Geolocation error callback:", err);
+        console.error("Geolocation error callback in ScannerPage:", err);
         setGeoLoading(false);
+        toast.dismiss(loadingToast);
+        
         const messages: Record<number, string> = {
           1: t('permissionDenied') || "Permissão de localização negada.",
           2: t('locationError') || "Localização indisponível.",
@@ -553,7 +564,11 @@ export function ScannerPage({ onBack, onNavigateToHistory, onOpenMenu, initialDa
         };
         toast.error(messages[err.code] || t('locationError'));
       },
-      { timeout: 10000, enableHighAccuracy: false }
+      { 
+        timeout: 20000, 
+        enableHighAccuracy: true,
+        maximumAge: 0
+      }
     );
   };
 

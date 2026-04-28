@@ -122,11 +122,14 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
     setGeoLoading(true);
     console.log("Starting geolocation in ShoppingPage...");
 
-    if (!navigator.geolocation) {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
       toast.error(t('locationError'));
       setGeoLoading(false);
       return;
     }
+
+    // Use a toast to show progress
+    const loadingToast = toast.info(t('gettingLocation'), { duration: 5000 });
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -134,7 +137,12 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
           console.log("Coords obtained in ShoppingPage:", pos.coords.latitude, pos.coords.longitude);
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
-            { headers: { 'Accept-Language': 'pt-BR' } }
+            { 
+              headers: { 
+                'Accept-Language': 'pt-BR',
+                'User-Agent': 'MagicmartAI/1.0' 
+              } 
+            }
           );
           if (!res.ok) throw new Error("API reverse geocoding failed");
           
@@ -153,11 +161,13 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
           
           setStoreName(name.trim());
           setStoreSet(true);
+          toast.dismiss(loadingToast);
           toast.success(t('locationObtained'));
         } catch (err) {
           console.error("OSM Error in ShoppingPage:", err);
           setStoreName(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
           setStoreSet(true);
+          toast.dismiss(loadingToast);
           toast.info(t('coordsSaved'));
         }
         setGeoLoading(false);
@@ -165,6 +175,8 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
       (err) => {
         console.error("Geolocation error callback in ShoppingPage:", err);
         setGeoLoading(false);
+        toast.dismiss(loadingToast);
+        
         const messages: Record<number, string> = {
           1: t('permissionDenied') || "Permissão negada.",
           2: t('locationError') || "Localização indisponível.",
@@ -172,7 +184,11 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
         };
         toast.error(messages[err.code] || t('locationError'));
       },
-      { timeout: 10000, enableHighAccuracy: false }
+      { 
+        timeout: 20000, 
+        enableHighAccuracy: true,
+        maximumAge: 0
+      }
     );
   };
 

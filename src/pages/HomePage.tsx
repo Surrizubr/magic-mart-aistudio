@@ -165,7 +165,7 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
         <motion.div variants={item}>
           <button
             onClick={() => onNavigate('savings')}
-            className="w-full rounded-xl p-4 flex items-center justify-between"
+            className="w-full rounded-xl p-4 flex items-center justify-between border-2 border-yellow-600/20"
             style={{ backgroundColor: 'hsl(48, 100%, 90%)' }}
           >
             <div className="flex items-center gap-2">
@@ -292,9 +292,18 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
 
         {/* Sugestão de dias mais baratos Calendar */}
         <motion.div variants={item} className="bg-card rounded-2xl border border-border p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-5 h-5 text-primary" />
-            <h2 className="text-sm font-bold text-foreground tracking-tight">{t('suggestedCheapestDaysTitle')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h2 className="text-sm font-bold text-foreground tracking-tight">{t('suggestedCheapestDaysTitle')}</h2>
+            </div>
+            <button 
+              onClick={() => onNavigate('savings')} 
+              className="text-xs text-primary font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity"
+            >
+              {t('savings')}
+              <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
 
           <div className="space-y-4">

@@ -4,4 +4,5 @@
     <string name="title_activity_main">MagicMart</string>
     <string name="package_name">com.magicmart.app</string>
     <string name="custom_url_scheme">com.magicmart.app</string>
+    <string name="server_client_id">690873912766-otrpkgjojfearsa2smfj3hdjb7f8oe0k.apps.googleusercontent.com</string>
 </resources>

@@ -1,6 +1,8 @@
 import { Purchases, LOG_LEVEL, CustomerInfo } from '@revenuecat/purchases-capacitor';
 import { RevenueCatUI, PAYWALL_RESULT } from '@revenuecat/purchases-capacitor-ui';
 
+import { Capacitor } from '@capacitor/core';
+
 const REVENUECAT_API_KEY_WEB = import.meta.env.VITE_REVENUECAT_PUBLIC_KEY_WEB || 'goog_your_key_here';
 const REVENUECAT_API_KEY_IOS = import.meta.env.VITE_REVENUECAT_PUBLIC_KEY_IOS || 'goog_your_key_here';
 const REVENUECAT_API_KEY_ANDROID = import.meta.env.VITE_REVENUECAT_PUBLIC_KEY_ANDROID || 'goog_your_key_here';
@@ -14,12 +16,22 @@ export class RevenueCatService {
     if (this.initialized) return;
 
     try {
+      if (!Capacitor.isPluginAvailable('Purchases')) {
+        console.warn('RevenueCat Purchases plugin not available');
+        return;
+      }
+
       await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
       
-      const apiKey = REVENUECAT_API_KEY_WEB;
+      let apiKey = REVENUECAT_API_KEY_WEB;
       
-      // Determine API Key based on platform if running on native via Capacitor
-      // For now, in web preview, we use the web/android public keys
+      if (Capacitor.getPlatform() === 'android') {
+        apiKey = REVENUECAT_API_KEY_ANDROID;
+      } else if (Capacitor.getPlatform() === 'ios') {
+        apiKey = REVENUECAT_API_KEY_IOS;
+      }
+      
+      console.log('Configuring RevenueCat with platform:', Capacitor.getPlatform());
       
       await Purchases.configure({
         apiKey: apiKey,

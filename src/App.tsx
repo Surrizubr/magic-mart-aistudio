@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { DevModeProvider } from "@/contexts/DevModeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
@@ -20,31 +21,35 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <PreferencesProvider>
-          <DevModeProvider>
-            <LanguageProvider>
-              <SubscriptionProvider>
-                <TooltipProvider>
-                  <Toaster position="top-center" />
-                  <BrowserRouter>
-                    <AuthGuard>
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                      </Routes>
-                    </AuthGuard>
-                  </BrowserRouter>
-                </TooltipProvider>
-              </SubscriptionProvider>
-            </LanguageProvider>
-          </DevModeProvider>
-        </PreferencesProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+const App = () => {
+  const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <PreferencesProvider>
+            <DevModeProvider>
+              <LanguageProvider>
+                <SubscriptionProvider>
+                  <TooltipProvider>
+                    <Toaster position="top-center" />
+                    <Router>
+                      <AuthGuard>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                        </Routes>
+                      </AuthGuard>
+                    </Router>
+                  </TooltipProvider>
+                </SubscriptionProvider>
+              </LanguageProvider>
+            </DevModeProvider>
+          </PreferencesProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;

@@ -2,18 +2,48 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Capacitor } from '@capacitor/core';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
 export function LoginPage() {
   const { t } = useLanguage();
 
   const handleGoogleLogin = async () => {
-    console.log('[Login] Starting Google login with Popup...');
+    console.log('[Login] Starting Google login...');
     
+    // NATIVE LOGIN (CAPACITOR)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        console.log('[Login] Using Native Google Auth Plugin');
+        const googleUser = await GoogleAuth.signIn();
+        console.log('[Login] Google Native Success:', googleUser.email);
+        
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: googleUser.authentication.idToken,
+        });
+
+        if (error) throw error;
+        if (data.session) {
+          toast.success('Login realizado com sucesso!');
+        }
+        return;
+      } catch (err: any) {
+        console.error('[Login] Native Auth Error:', err);
+        // Fallback to web if needed, but usually we just show error
+        if (err.error !== 'popup_closed_by_user') {
+          toast.error('Erro no login nativo: ' + (err.message || 'Desconhecido'));
+        }
+        return;
+      }
+    }
+
+    // WEB LOGIN (POPUP)
     try {
+      console.log('[Login] Using Web Popup Auth');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          //redirectTo: window.location.origin, // Supabase handles this better with popup
           skipBrowserRedirect: true,
           queryParams: {
             prompt: 'select_account',
@@ -24,7 +54,6 @@ export function LoginPage() {
       if (error) throw error;
 
       if (data?.url) {
-        // Abre o link do Google em uma nova janela (Popup)
         const width = 500;
         const height = 600;
         const left = window.screenX + (window.outerWidth - width) / 2;
@@ -41,7 +70,6 @@ export function LoginPage() {
           return;
         }
 
-        // Monitora o fechamento da janela ou mudança de URL para detectar sucesso
         const checkPopup = setInterval(async () => {
           try {
             if (popup.closed) {
@@ -50,16 +78,14 @@ export function LoginPage() {
               const { data: sessionData } = await supabase.auth.getSession();
               if (sessionData.session) {
                 toast.success('Login realizado com sucesso!');
-                // O useAuth detectará a mudança de estado automaticamente
               }
             }
           } catch (e) {
-            // Ignora erros de cross-origin antes do redirecionamento final
           }
         }, 1000);
       }
     } catch (err: any) {
-      console.error('[Login] Error:', err);
+      console.error('[Login] Web Error:', err);
       toast.error(err.message || t('loginError'));
     }
   };

@@ -169,6 +169,14 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
 
   const [editingItemCategoryId, setEditingItemCategoryId] = useState<string | null>(null);
   const [pendingImportItems, setPendingImportItems] = useState<any[] | null>(null);
+  const [selectedItemForHistory, setSelectedItemForHistory] = useState<string | null>(null);
+
+  const selectedItemHistory = useMemo(() => {
+    if (!selectedItemForHistory) return [];
+    return getHistory()
+      .filter(h => h.product_name.toLowerCase() === selectedItemForHistory.toLowerCase())
+      .sort((a, b) => b.purchase_date.localeCompare(a.purchase_date));
+  }, [selectedItemForHistory]);
 
   const handleUpdateCategory = async (itemId: string, newCategory: string) => {
     const item = historyData.find(h => h.id === itemId);
@@ -743,7 +751,14 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
                             rightIcon={<ListPlus className="w-5 h-5 text-primary-foreground" />}
                             rightBg="bg-primary"
                           >
-                            <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 bg-background">
+                            <div 
+                              className={`flex items-center justify-between py-2 border-b border-border/50 last:border-0 bg-background ${itemVariations[item.id] !== undefined ? 'cursor-pointer active:bg-accent/30' : ''}`}
+                              onClick={() => {
+                                if (itemVariations[item.id] !== undefined) {
+                                  setSelectedItemForHistory(item.product_name);
+                                }
+                              }}
+                            >
                               <div className="flex-1 min-w-0 pr-4">
                                 <p className="text-sm font-medium text-foreground">{item.product_name}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
@@ -910,6 +925,66 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
             <Button variant="outline" className="flex-1" onClick={() => confirmImport(false)}>{t('no')}</Button>
             <Button className="flex-1" onClick={() => confirmImport(true)}>{t('confirm')}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Price History Dialog */}
+      <Dialog open={!!selectedItemForHistory} onOpenChange={(open) => !open && setSelectedItemForHistory(null)}>
+        <DialogContent className="max-w-[90vw] rounded-xl max-h-[80vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              {t('priceHistoryTitle')}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              {selectedItemForHistory}
+            </p>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="space-y-3 mt-2">
+              {selectedItemHistory.length > 0 ? (
+                selectedItemHistory.map((h, i) => {
+                  const prevItem = selectedItemHistory[i + 1];
+                  const variation = prevItem ? ((h.price - prevItem.price) / prevItem.price) * 100 : null;
+                  
+                  return (
+                    <div key={h.id} className="bg-accent/30 rounded-lg p-3 border border-border/50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="text-xs font-bold text-foreground">{formatDate(h.purchase_date)}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 text-primary" />
+                            <p className="text-[10px] text-muted-foreground uppercase font-medium">{h.store_name}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-primary">{fc(h.price)}</p>
+                          {variation !== null && Math.abs(variation) > 0.001 && (
+                            <div className={`flex items-center justify-end gap-0.5 text-[10px] font-bold ${variation > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                              {variation > 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+                              {Math.abs(variation).toFixed(1)}%
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8">
+                  <Clock className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-20" />
+                  <p className="text-xs text-muted-foreground">{t('noHistoryFound')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="p-4 border-t border-border bg-card">
+            <Button className="w-full" onClick={() => setSelectedItemForHistory(null)}>
+              {t('closeDetails')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

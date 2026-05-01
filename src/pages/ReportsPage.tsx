@@ -33,11 +33,13 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
   // Group all history by month for the month picker and evolution chart
   const monthsData = useMemo(() => {
     const acc = history.reduce<Record<string, { label: string, year: number, month: number, total: number }>>((acc, h) => {
-      const d = new Date(h.purchase_date + 'T12:00:00');
-      const month = d.getMonth();
-      const year = d.getFullYear();
-      const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+      const [yStr, mStr] = h.purchase_date.split('-');
+      const year = parseInt(yStr);
+      const month = parseInt(mStr) - 1;
+      const key = `${yStr}-${mStr}`;
+      
       if (!acc[key]) {
+        const d = new Date(year, month, 1);
         acc[key] = {
           label: d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''),
           year,
@@ -421,8 +423,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           const transportByMonth = history.reduce<Record<string, number>>((acc, h) => {
             const mergedCat = categoryMerge[h.category] || h.category;
             if (mergedCat !== 'Transporte') return acc;
-            const d = new Date(h.purchase_date);
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const key = h.purchase_date.slice(0, 7); // Use slice for YYYY-MM
             if (recentMonthKeys.includes(key)) {
               acc[key] = (acc[key] || 0) + h.total_price;
             }
@@ -448,8 +449,8 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 {data.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
                     <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
-                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/50 italic font-normal'}`}>
-                      {item.value > 0 ? fc(item.value) : t('noExpensesYet')}
+                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/40'}`}>
+                      {fc(item.value)}
                     </span>
                   </div>
                 ))}
@@ -469,8 +470,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           const restaurantByMonth = history.reduce<Record<string, number>>((acc, h) => {
             const mergedCat = categoryMerge[h.category] || h.category;
             if (mergedCat !== 'Restaurante') return acc;
-            const d = new Date(h.purchase_date);
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const key = h.purchase_date.slice(0, 7); // Use slice for YYYY-MM
             if (recentMonthKeys.includes(key)) {
               acc[key] = (acc[key] || 0) + h.total_price;
             }
@@ -496,8 +496,8 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 {data.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
                     <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
-                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/50 italic font-normal'}`}>
-                      {item.value > 0 ? fc(item.value) : t('noExpensesYet')}
+                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/40'}`}>
+                      {fc(item.value)}
                     </span>
                   </div>
                 ))}
@@ -514,7 +514,7 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
           const maintenanceByYear = history.reduce<Record<string, number>>((acc, h) => {
             const mergedCat = categoryMerge[h.category] || h.category;
             if (mergedCat !== 'Manutenção') return acc;
-            const year = new Date(h.purchase_date).getFullYear().toString();
+            const year = h.purchase_date.split('-')[0];
             if (recentYearKeys.includes(year)) {
               acc[year] = (acc[year] || 0) + h.total_price;
             }
@@ -536,8 +536,8 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 {data.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
                     <span className="text-sm font-semibold text-foreground">{item.year}</span>
-                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/50 italic font-normal'}`}>
-                      {item.value > 0 ? fc(item.value) : t('noExpensesYet')}
+                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/40'}`}>
+                      {fc(item.value)}
                     </span>
                   </div>
                 ))}

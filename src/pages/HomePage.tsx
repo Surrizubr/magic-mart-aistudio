@@ -193,14 +193,17 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             </button>
           </div>
 
-          <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 mb-4 flex items-start gap-3 shadow-sm">
+          <button 
+            onClick={() => onNavigate('lists')}
+            className="w-full text-left bg-amber-50/50 border border-amber-100 rounded-2xl p-4 mb-4 flex items-start gap-3 shadow-sm hover:bg-amber-100/50 transition-colors"
+          >
             <div className="bg-amber-500/10 p-2 rounded-xl">
               <Info className="w-5 h-5 text-amber-600 shrink-0" />
             </div>
             <p className="text-xs text-amber-800/80 leading-relaxed font-medium">
               {t('activeListsBanner')}
             </p>
-          </div>
+          </button>
           {activeLists.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-4 text-center">
               <p className="text-xs text-muted-foreground">{t('noActiveLists')}</p>
@@ -252,14 +255,17 @@ export function HomePage({ displayName, onNavigate, onOpenMenu }: HomePageProps)
             </div>
           </div>
 
-          <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 mb-4 flex items-start gap-3 shadow-sm">
+          <button 
+            onClick={() => onNavigate('stock')}
+            className="w-full text-left bg-amber-50/50 border border-amber-100 rounded-2xl p-4 mb-4 flex items-start gap-3 shadow-sm hover:bg-amber-100/50 transition-colors"
+          >
             <div className="bg-amber-500/10 p-2 rounded-xl">
               <Info className="w-5 h-5 text-amber-600 shrink-0" />
             </div>
             <p className="text-xs text-amber-800/80 leading-relaxed font-medium">
               {t('alertsBanner')}
             </p>
-          </div>
+          </button>
           {criticalStock.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-4 text-center">
               <p className="text-xs text-muted-foreground">{t('stockUpToDate')}</p>

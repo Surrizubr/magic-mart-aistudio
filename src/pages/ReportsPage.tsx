@@ -177,6 +177,8 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
     'Transporte': 'Transporte',
     'Transport': 'Transporte',
     'Transportation': 'Transporte',
+    'Combustível': 'Transporte',
+    'Fuel': 'Transporte',
   };
 
   const categoryTotals = filteredHistory.reduce<Record<string, number>>((acc, h) => {
@@ -410,24 +412,31 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
 
         {/* Monthly Transport Expenses */}
         {(() => {
-          const transportByMonth = history.reduce<Record<string, { label: string, total: number }>>((acc, h) => {
+          const now = new Date();
+          const recentMonthKeys = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          });
+
+          const transportByMonth = history.reduce<Record<string, number>>((acc, h) => {
             const mergedCat = categoryMerge[h.category] || h.category;
             if (mergedCat !== 'Transporte') return acc;
             const d = new Date(h.purchase_date);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            if (!acc[key]) {
-              acc[key] = {
-                label: d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''),
-                total: 0
-              };
+            if (recentMonthKeys.includes(key)) {
+              acc[key] = (acc[key] || 0) + h.total_price;
             }
-            acc[key].total += h.total_price;
             return acc;
           }, {});
 
-          const data = Object.entries(transportByMonth)
-            .sort((a, b) => b[0].localeCompare(a[0]))
-            .map(([key, val]) => ({ month: val.label, value: val.total }));
+          const data = recentMonthKeys.map(key => {
+            const [year, month] = key.split('-').map(Number);
+            const d = new Date(year, month - 1, 1);
+            return {
+              month: d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''),
+              value: transportByMonth[key] || 0
+            };
+          });
 
           return (
             <div className="bg-card rounded-xl border border-border p-4">
@@ -436,18 +445,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 <h3 className="text-sm font-bold text-foreground">{t('transportMonthly')}</h3>
               </div>
               <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
-                {data.length > 0 ? (
-                  data.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
-                      <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
-                      <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center border border-dashed border-border rounded-xl">
-                    <p className="text-xs text-muted-foreground">{t('noExpensesYet')}</p>
+                {data.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                    <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
+                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/50 italic font-normal'}`}>
+                      {item.value > 0 ? fc(item.value) : t('noExpensesYet')}
+                    </span>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           );
@@ -455,24 +460,31 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
 
         {/* Monthly Restaurant Expenses */}
         {(() => {
-          const restaurantByMonth = history.reduce<Record<string, { label: string, total: number }>>((acc, h) => {
+          const now = new Date();
+          const recentMonthKeys = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          });
+
+          const restaurantByMonth = history.reduce<Record<string, number>>((acc, h) => {
             const mergedCat = categoryMerge[h.category] || h.category;
             if (mergedCat !== 'Restaurante') return acc;
             const d = new Date(h.purchase_date);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            if (!acc[key]) {
-              acc[key] = {
-                label: d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''),
-                total: 0
-              };
+            if (recentMonthKeys.includes(key)) {
+              acc[key] = (acc[key] || 0) + h.total_price;
             }
-            acc[key].total += h.total_price;
             return acc;
           }, {});
 
-          const data = Object.entries(restaurantByMonth)
-            .sort((a, b) => b[0].localeCompare(a[0]))
-            .map(([key, val]) => ({ month: val.label, value: val.total }));
+          const data = recentMonthKeys.map(key => {
+            const [year, month] = key.split('-').map(Number);
+            const d = new Date(year, month - 1, 1);
+            return {
+              month: d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''),
+              value: restaurantByMonth[key] || 0
+            };
+          });
 
           return (
             <div className="bg-card rounded-xl border border-border p-4">
@@ -481,18 +493,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 <h3 className="text-sm font-bold text-foreground">{t('restaurantsMonthly')}</h3>
               </div>
               <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
-                {data.length > 0 ? (
-                  data.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
-                      <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
-                      <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center border border-dashed border-border rounded-xl">
-                    <p className="text-xs text-muted-foreground">{t('noExpensesYet')}</p>
+                {data.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                    <span className="text-sm font-semibold text-foreground capitalize">{item.month}</span>
+                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/50 italic font-normal'}`}>
+                      {item.value > 0 ? fc(item.value) : t('noExpensesYet')}
+                    </span>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           );
@@ -500,17 +508,23 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
 
         {/* Yearly Maintenance Expenses */}
         {(() => {
+          const now = new Date();
+          const recentYearKeys = Array.from({ length: 4 }, (_, i) => (now.getFullYear() - i).toString());
+
           const maintenanceByYear = history.reduce<Record<string, number>>((acc, h) => {
             const mergedCat = categoryMerge[h.category] || h.category;
             if (mergedCat !== 'Manutenção') return acc;
             const year = new Date(h.purchase_date).getFullYear().toString();
-            acc[year] = (acc[year] || 0) + h.total_price;
+            if (recentYearKeys.includes(year)) {
+              acc[year] = (acc[year] || 0) + h.total_price;
+            }
             return acc;
           }, {});
 
-          const data = Object.entries(maintenanceByYear)
-            .sort((a, b) => b[0].localeCompare(a[0]))
-            .map(([year, total]) => ({ year, value: total }));
+          const data = recentYearKeys.map(year => ({
+            year,
+            value: maintenanceByYear[year] || 0
+          }));
 
           return (
             <div className="bg-card rounded-xl border border-border p-4">
@@ -519,18 +533,14 @@ export function ReportsPage({ onBack, onNavigate }: ReportsPageProps) {
                 <h3 className="text-sm font-bold text-foreground">{t('maintenanceYearly')}</h3>
               </div>
               <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
-                {data.length > 0 ? (
-                  data.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
-                      <span className="text-sm font-semibold text-foreground">{item.year}</span>
-                      <span className="text-sm font-bold text-primary">{fc(item.value)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center border border-dashed border-border rounded-xl">
-                    <p className="text-xs text-muted-foreground">{t('noExpensesYet')}</p>
+                {data.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                    <span className="text-sm font-semibold text-foreground">{item.year}</span>
+                    <span className={`text-sm font-bold ${item.value > 0 ? 'text-primary' : 'text-muted-foreground/50 italic font-normal'}`}>
+                      {item.value > 0 ? fc(item.value) : t('noExpensesYet')}
+                    </span>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           );

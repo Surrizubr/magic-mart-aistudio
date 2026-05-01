@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { recalculateStockRates } from '@/lib/consumptionCalculator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/components/PageHeader';
-import { ArrowLeft, ListChecks, Camera, Search, MapPin, X, Plus, Minus, ShoppingCart, XCircle, CheckCircle, Loader2, RotateCcw, Send, Info, Lightbulb } from 'lucide-react';
+import { ArrowLeft, ListChecks, Camera, Search, MapPin, X, Plus, Minus, ShoppingCart, XCircle, CheckCircle, CheckCircle2, Loader2, RotateCcw, Send, Info, Lightbulb } from 'lucide-react';
 import { TabId, StockItem, PurchaseHistory } from '@/types';
 import { toast } from 'sonner';
 import { analyzeWithGemini, PRODUCT_PROMPT } from '@/services/geminiService';
@@ -237,50 +237,7 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
       return;
     }
     
-    // Save to stock
-    const existing = getStock();
-    let newStock = [...existing];
-    
-    items.forEach(item => {
-      // Find all matches for this product name
-      const sameNameItems = newStock.filter(e => e.product_name.toLowerCase() === item.product_name.toLowerCase());
-      const activeItem = sameNameItems.find(e => e.quantity > 0) || sameNameItems[0];
-      
-      if (activeItem) {
-        // Update the active item
-        const idx = newStock.findIndex(e => e.id === activeItem.id);
-        newStock[idx] = {
-          ...newStock[idx],
-          quantity: newStock[idx].quantity + item.quantity,
-          last_price: item.price,
-          last_purchase_date: new Date().toISOString(),
-          status: 'ok' // Reset status to 'ok' since we just replenished it
-        };
-        
-        // Prune any other items with same name and 0 quantity
-        const entriesToRemove = sameNameItems.filter(e => e.id !== activeItem.id && e.quantity === 0).map(e => e.id);
-        if (entriesToRemove.length > 0) {
-          newStock = newStock.filter(s => !entriesToRemove.includes(s.id));
-        }
-      } else {
-        newStock.push({
-          id: crypto.randomUUID(),
-          product_name: item.product_name,
-          category: item.category,
-          quantity: item.quantity,
-          unit: item.unit,
-          min_quantity: 1,
-          daily_consumption_rate: 0.1,
-          status: 'ok',
-          last_price: item.price,
-          last_purchase_date: new Date().toISOString()
-        });
-      }
-    });
-    
-    await saveStock(newStock);
-    
-    // Save to history
+    // Save to history only
     const history = getHistory();
     const newHistory = [...history];
     
@@ -298,12 +255,9 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
       });
     });
     
-    // Recalculate rates before final save to keep cache consistent
-    const updatedStockWithRates = recalculateStockRates(newStock, newHistory);
-    await saveStock(updatedStockWithRates);
     await saveHistory(newHistory);
 
-    toast.success(t('itemsAddedToStock').replace('{count}', String(items.length)));
+    toast.success(t('shoppingEnded'));
     onNavigate('home');
   };
 
@@ -709,13 +663,24 @@ export function ShoppingPage({ onNavigate, onBack }: ShoppingPageProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="px-4 pt-3 flex gap-2">
-        <button onClick={finishShopping} className="flex-1 flex items-center justify-center gap-1.5 p-2.5 rounded-xl gradient-primary text-primary-foreground text-xs font-bold">
-          <CheckCircle className="w-4 h-4" /> {t('finishShopping')}
-        </button>
-        <button onClick={cancelShopping} className="flex-1 flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-destructive/30 bg-destructive/5 text-destructive text-xs font-bold">
-          <XCircle className="w-4 h-4" /> {t('cancelShopping')}
-        </button>
+      <div className="px-4 pt-3 flex flex-col gap-3">
+        <div className="flex gap-2">
+          <button onClick={finishShopping} className="flex-1 flex items-center justify-center gap-1.5 p-2.5 rounded-xl gradient-primary text-primary-foreground text-xs font-bold shadow-lg">
+            <CheckCircle className="w-4 h-4" /> {t('finishShopping')}
+          </button>
+          <button onClick={cancelShopping} className="flex-1 flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-destructive/30 bg-destructive/5 text-destructive text-xs font-bold">
+            <XCircle className="w-4 h-4" /> {t('cancelShopping')}
+          </button>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3 shadow-sm">
+          <div className="bg-amber-500/10 p-1.5 rounded-lg shrink-0">
+            <CheckCircle2 className="w-4 h-4 text-amber-600" />
+          </div>
+          <p className="text-[11px] leading-relaxed text-amber-800 font-medium italic">
+            {t('endShoppingBanner')}
+          </p>
+        </div>
       </div>
 
       {/* Camera section for register mode */}

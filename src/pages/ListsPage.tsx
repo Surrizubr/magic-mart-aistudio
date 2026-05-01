@@ -88,22 +88,7 @@ export function ListsPage({ onBack }: ListsPageProps) {
 
   const handleFinishShopping = async (updatedList: ShoppingList, checkedItems: ShoppingListItem[], storeName: string) => {
     setLists(prev => prev.map(l => l.id === updatedList.id ? updatedList : l));
-    const existingStock: StockItem[] = getStock();
-    checkedItems.forEach(item => {
-      const existing = existingStock.find(s => s.product_name.toLowerCase() === item.product_name.toLowerCase());
-      if (existing) {
-        existing.quantity += item.quantity;
-      } else {
-        existingStock.push({
-          id: `stock_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          product_name: item.product_name, category: item.category,
-          quantity: item.quantity, unit: item.unit, min_quantity: 1,
-          daily_consumption_rate: 0.1, status: 'ok',
-          last_price: item.estimated_price || item.actual_price,
-        });
-      }
-    });
-
+    
     const history = getHistory();
     checkedItems.forEach(item => {
       history.push({
@@ -117,8 +102,6 @@ export function ListsPage({ onBack }: ListsPageProps) {
       });
     });
 
-    const updatedStockWithRates = recalculateStockRates(existingStock, history);
-    await saveStock(updatedStockWithRates);
     await saveHistory(history);
     setSelectedListId(null);
   };

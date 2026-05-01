@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ShoppingList, ShoppingListItem, StockItem } from '@/types';
-import { ArrowLeft, Plus, ShoppingCart, CheckCircle, Trash2, MapPin, Loader2, Search, Calculator } from 'lucide-react';
+import { ArrowLeft, Plus, ShoppingCart, CheckCircle, CheckCircle2, Trash2, MapPin, Loader2, Search, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PermissionGate } from '@/components/PermissionGate';
@@ -428,9 +428,15 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
               <CheckCircle className="w-5 h-5 mr-2" />
               {t('endShopping')} ({checkedCount}/{items.length})
             </Button>
-            <p className="text-[10px] text-center text-muted-foreground">
-              ⚠️ {t('finishShoppingPrompt')}
-            </p>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3 shadow-sm">
+              <div className="bg-amber-500/10 p-1.5 rounded-lg shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-amber-600" />
+              </div>
+              <p className="text-[11px] leading-relaxed text-amber-800 font-medium italic">
+                {t('endShoppingBanner')}
+              </p>
+            </div>
           </div>
         )}
 

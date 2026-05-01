@@ -70,6 +70,7 @@ const translations: Record<string, Record<Lang, string>> = {
   saveList: { pt: 'Salvar Lista', en: 'Save List', es: 'Guardar Lista' },
   editList: { pt: 'Editar Lista', en: 'Edit List', es: 'Editar Lista' },
   endShopping: { pt: 'Encerrar Compras', en: 'End Shopping', es: 'Terminar Compras' },
+  endShoppingBanner: { pt: 'Ao encerrar, os itens vão apenas para o histórico. O estoque será atualizado após você escanear o cupom fiscal.', en: 'When finishing, items only go to history. Stock will be updated after you scan the receipt.', es: 'Al finalizar, los artículos solo van al historial. El stock se atualizará después de escanear el recibo.' },
   createList: { pt: 'Gerenciar e criar listas', en: 'Manage and create lists', es: 'Gestionar y crear listas' },
   goShopping: { pt: 'Fazer Mercado', en: 'Go Shopping', es: 'Ir al Mercado' },
   addProducts: { pt: 'Adicionar produtos na cesta', en: 'Add products to basket', es: 'Agregar produtos' },

@@ -78,7 +78,7 @@ const translations: Record<string, Record<Lang, string>> = {
   share: { pt: 'Compartilhar', en: 'Share', es: 'Compartir' },
   shopping: { pt: 'Fazer Mercado', en: 'Shopping', es: 'Ir al mercado' },
   shareSubtitle: { pt: 'Selecione as listas para compartilhar', en: 'Select lists to share', es: 'Selecciona listas para compartir' },
-  activeLists: { pt: 'Listas ativas', en: 'Active lists', es: 'Listas activas' },
+  activeLists: { pt: 'Enviar Listas de Compras', en: 'Send Shopping Lists', es: 'Enviar Listas de Compras' },
   activeListsTitle: { pt: 'Listas Ativas', en: 'Active Lists', es: 'Listas Activas' },
   cheapDays: { pt: 'Dias de compras mais baratos', en: 'Cheapest shopping days', es: 'Días de compras más baratos' },
   alerts: { pt: 'Alertas', en: 'Alerts', es: 'Alertas' },

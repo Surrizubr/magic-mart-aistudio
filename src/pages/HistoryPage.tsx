@@ -92,6 +92,25 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
       .reduce((sum, h) => sum + h.total_price, 0);
   }, [historyData]);
 
+  // Totals for the last three months
+  const lastThreeMonthsTotals = useMemo(() => {
+    const totals = [];
+    const now = new Date();
+    // Use mid-month to avoid timezone issues when checking month-1, month-2, etc.
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 15);
+      const monthKey = d.toISOString().slice(0, 7);
+      const total = historyData
+        .filter(h => h.purchase_date && h.purchase_date.startsWith(monthKey))
+        .reduce((sum, h) => sum + h.total_price, 0);
+      
+      const label = d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'pt-BR', { month: 'short' });
+      const year = d.getFullYear();
+      totals.push({ label, total, key: monthKey, year });
+    }
+    return totals;
+  }, [historyData, lang]);
+
   // Totals per month for the list banners
   const monthSums = useMemo(() => {
     const sums: Record<string, number> = {};
@@ -640,6 +659,16 @@ export function HistoryPage({ onNavigateToScanner, onBack, filterDate, filterSto
             </p>
           </div>
           <p className="text-2xl font-bold text-primary">{fc(currentMonthTotal)}</p>
+        </div>
+
+        {/* Last 3 Months mini-summary */}
+        <div className="grid grid-cols-3 gap-2 px-1">
+          {lastThreeMonthsTotals.map((m) => (
+            <div key={m.key} className="bg-card rounded-lg border border-border/50 p-2 text-center">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase">{m.label} {m.year}</p>
+              <p className="text-xs font-bold text-foreground truncate">{fc(m.total)}</p>
+            </div>
+          ))}
         </div>
 
         {currentMonthTotal === 0 && !searchQuery && !filterDate && !filterStore && (

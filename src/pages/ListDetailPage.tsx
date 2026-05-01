@@ -251,12 +251,14 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
         {/* Add item form */}
         <AnimatePresence>
           {showAddItem && !shoppingMode && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
+            <>
+              {showSuggestions && <div className="fixed inset-0 z-10" onClick={() => setShowSuggestions(false)} />}
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden relative z-20"
+              >
               <div className="bg-card rounded-lg shadow-card p-4 space-y-3">
                 <div className="relative">
                   <input
@@ -298,12 +300,11 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                           </span>
                         </button>
                       ))}
-                      {filteredSuggestions.length === 0 && (
+                      {filteredSuggestions.length === 0 && newProduct.length > 0 && (
                         <p className="px-4 py-3 text-xs text-muted-foreground text-center">{t('noResults')}</p>
                       )}
                     </div>
                   )}
-                  {showSuggestions && <div className="fixed inset-0 z-[5] bg-transparent" onClick={() => setShowSuggestions(false)} />}
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -339,6 +340,7 @@ export function ListDetailPage({ list, onBack, onUpdateList, onFinishShopping }:
                 </div>
               </div>
             </motion.div>
+          </>
           )}
         </AnimatePresence>
 

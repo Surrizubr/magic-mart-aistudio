@@ -309,7 +309,7 @@ const translations: Record<string, Record<Lang, string>> = {
   heatmapLegendMonth: { pt: 'Últimos 3 meses · Toque para ver os locais', en: 'Last 3 months · Tap to see locations', es: 'Últimos 3 meses · Toca para ver locales' },
   bestLocations: { pt: 'Melhores Locais para Comprar', en: 'Best Locations to Buy', es: 'Mejores Lugares para Comprar' },
   productsMonitored: { pt: '{count} produtos monitorados', en: '{count} products monitored', es: '{count} productos monitoreados' },
-  suggestedCheapestDaysTitle: { pt: 'Sugestão de dias mais baratos', en: 'Suggested cheapest days', es: 'Días sugeridos más baratos' },
+  suggestedCheapestDaysTitle: { pt: 'Sugestões de dias de compras para este mês', en: 'Shopping day suggestions for this month', es: 'Sugerencias de días de compras para este mes' },
   heatmapInfoBanner: { 
     pt: 'A medida que você cadastrar mais notas fiscais, as sugestões do calendário se tornarão cada vez mais precisas para o seu perfil de consumo.', 
     en: 'As you register more receipts, the calendar suggestions will become increasingly precise for your consumption profile.',

@@ -3,13 +3,16 @@ import { supabase, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/clie
 import { useAuth } from '@/hooks/useAuth';
 import { useDevMode } from '@/contexts/DevModeContext';
 import { RevenueCatService } from '@/services/revenueCatService';
+import { Capacitor } from '@capacitor/core';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from 'sonner';
 
 export type SubStatus = 'active' | 'expiring' | 'inactive';
 
-const USE_REVENUECAT = true; // Set to false to reactivate Stripe
-
 export interface SubscriptionInfo {
   stripe_status?: string;
+  revenuecat_status?: string;
+  subscription_tier?: string;
   stripe_customer_id?: string | null;
   subscription_end: string | null;
   display_name: string | null;
@@ -35,6 +38,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { devMode } = useDevMode();
+  const { t } = useLanguage();
   const [status, setStatus] = useState<SubStatus>(() => {
     if (devMode) return 'active';
     return 'inactive'; // Default to inactive while loading
@@ -72,7 +76,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
     const { data, error, status: httpStatus } = await supabase
       .from('profiles')
-      .select('stripe_status, stripe_customer_id, subscription_end, display_name, user_id')
+      .select('stripe_status, revenuecat_status, subscription_tier, stripe_customer_id, subscription_end, display_name, user_id')
       .eq('user_id', user.id)
       .single();
 
@@ -87,6 +91,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (insertError) return null;
         return {
           stripe_status: (newData as any).stripe_status || 'inactive',
+          revenuecat_status: (newData as any).revenuecat_status || 'inactive',
+          subscription_tier: (newData as any).subscription_tier || 'free',
           stripe_customer_id: (newData as any).stripe_customer_id,
           subscription_end: (newData as any).subscription_end,
           display_name: newData.display_name,
@@ -100,6 +106,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
     return {
       stripe_status: (data as any).stripe_status || 'inactive',
+      revenuecat_status: (data as any).revenuecat_status || 'inactive',
+      subscription_tier: (data as any).subscription_tier || 'free',
       stripe_customer_id: (data as any).stripe_customer_id,
       subscription_end: (data as any).subscription_end,
       display_name: data.display_name,
@@ -108,7 +116,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, [user]);
 
   const syncSubscriptionFromStripe = useCallback(async (): Promise<any | null> => {
-    if (USE_REVENUECAT) return null; // Deactivated Stripe
     try {
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         body: {},
@@ -136,45 +143,59 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    if (USE_REVENUECAT) {
-      try {
-        await RevenueCatService.logIn(user.id);
-        const customerInfo = await RevenueCatService.getCustomerInfo();
-        const activeEntitlement = customerInfo.entitlements.active['IDAPPS Premium'];
+    let isPremiumRC = false;
+    let rcExpirationDate: string | null = null;
 
-        if (activeEntitlement) {
-          const profile: SubscriptionInfo = {
-            subscription_end: activeEntitlement.expirationDate || null,
-            display_name: null,
-            email: user.email || '',
-            entitlement_id: 'IDAPPS Premium'
-          };
-          applySubscriptionState(profile);
-          localStorage.setItem(`sub_status_${user.id}`, 'active');
-        } else {
-          applySubscriptionState(null);
-          localStorage.removeItem(`sub_status_${user.id}`);
-        }
-      } catch (error) {
-        console.error('RevenueCat check failed:', error);
+    // 1. Check RevenueCat (especially important on Mobile)
+    try {
+      await RevenueCatService.logIn(user.id);
+      const customerInfo = await RevenueCatService.getCustomerInfo();
+      const activeEntitlement = customerInfo.entitlements.active['IDAPPS Premium'];
+      
+      if (activeEntitlement) {
+        isPremiumRC = true;
+        rcExpirationDate = activeEntitlement.expirationDate || null;
       }
-    } else {
-      // Original Stripe Logic
-      let profile = await fetchProfile();
-      const shouldSyncWithStripe = forceSync || !profile || profile.stripe_status !== 'active';
-      if (shouldSyncWithStripe) {
-        const stripeSync = await syncSubscriptionFromStripe();
-        if (stripeSync?.subscribed) {
-          profile = {
-            stripe_status: 'active',
-            stripe_customer_id: stripeSync.customer_id || profile?.stripe_customer_id || null,
-            subscription_end: stripeSync.subscription_end || profile?.subscription_end || null,
-            display_name: profile?.display_name || null,
-            email: user.email || '',
-          };
-        }
+    } catch (error) {
+      console.warn('RevenueCat check skipped or failed (common on web):', error);
+    }
+
+    // 2. Check Supabase Profile (which includes Stripe status from webhooks)
+    let profile = await fetchProfile();
+    
+    // 3. Conditional Stripe Sync (if not already pro via DB or RC)
+    const isProInDb = profile?.stripe_status === 'active' || profile?.subscription_tier === 'pro';
+    if (!isPremiumRC && !isProInDb && (forceSync || !profile)) {
+      const stripeSync = await syncSubscriptionFromStripe();
+      if (stripeSync?.subscribed) {
+        profile = {
+          ...profile,
+          stripe_status: 'active',
+          stripe_customer_id: stripeSync.customer_id || profile?.stripe_customer_id || null,
+          subscription_end: stripeSync.subscription_end || profile?.subscription_end || null,
+          email: user.email || '',
+        } as SubscriptionInfo;
       }
+    }
+
+    // 4. Final Merging of State
+    if (isPremiumRC) {
+      // Prioritize RC if it's active
+      applySubscriptionState({
+        ...profile,
+        subscription_end: rcExpirationDate, // Use the latest from RC
+        entitlement_id: 'IDAPPS Premium',
+        email: user.email || '',
+      } as SubscriptionInfo);
+      localStorage.setItem(`sub_status_${user.id}`, 'active');
+    } else if (profile && (profile.stripe_status === 'active' || profile.subscription_tier === 'pro')) {
+      // Use Stripe/DB info
       applySubscriptionState(profile);
+      localStorage.setItem(`sub_status_${user.id}`, 'active');
+    } else {
+      // Not subscribed anywhere
+      applySubscriptionState(null);
+      localStorage.removeItem(`sub_status_${user.id}`);
     }
     
     setLoading(false);
@@ -185,11 +206,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, [checkSubscription]);
 
   const openCheckout = async () => {
-    if (USE_REVENUECAT) {
+    if (Capacitor.isNativePlatform()) {
       await presentPaywall();
       return;
     }
-    // Stripe Checkout
+    
+    // Stripe Checkout for Web
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {},
@@ -199,14 +221,16 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (data?.url) window.location.href = data.url;
     } catch (err) {
       console.error('Checkout error:', err);
+      toast.error(t('errorOpeningCheckout') || 'Erro ao abrir checkout');
     }
   };
 
   const openPortal = async () => {
-    if (USE_REVENUECAT) {
+    if (Capacitor.isNativePlatform()) {
       await RevenueCatService.presentCustomerCenter();
       return;
     }
+
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         body: {},
@@ -216,6 +240,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (data?.url) window.open(data.url, '_blank');
     } catch (err) {
       console.error('Portal error:', err);
+      toast.error(t('errorOpeningPortal') || 'Erro ao abrir portal');
     }
   };
 
